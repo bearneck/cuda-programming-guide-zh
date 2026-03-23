@@ -1,0 +1,140 @@
+site_name: CUDA 编程指南（中文版）
+site_description: NVIDIA CUDA Programming Guide 官方文档中文翻译版
+site_author: bearneck
+site_url: https://bearneck.github.io/cuda-programming-guide-zh/
+repo_name: bearneck/cuda-programming-guide-zh
+repo_url: https://github.com/bearneck/cuda-programming-guide-zh
+edit_uri: ""
+
+theme:
+  name: material
+  language: zh
+  palette:
+    - scheme: default
+      primary: green
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: 切换到深色模式
+    - scheme: slate
+      primary: green
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: 切换到浅色模式
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+  font:
+    text: Noto Sans SC
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/chip
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/bearneck
+  generator: false
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+      title: 本页目录
+
+plugins:
+  - search:
+      lang: zh
+  - minify:
+      minify_html: true
+
+nav:
+  - 首页: index.md
+  - 第一部分：CUDA 简介:
+    - 概述: chapters/part1-intro.md
+    - 1.1 简介: chapters/01-introduction.md
+    - 1.2 编程模型: chapters/02-programming-model.md
+    - 1.3 CUDA 平台: chapters/03-cuda-platform.md
+  - 第二部分：CUDA GPU 编程:
+    - 概述: chapters/part2-basics.md
+    - 2.1 CUDA C++ 入门: chapters/04-cuda-cpp-intro.md
+    - 2.2 编写 CUDA SIMT 内核: chapters/05-simt-kernels.md
+    - 2.3 异步执行: chapters/06-async-execution.md
+    - 2.4 统一内存与系统内存: chapters/07-unified-memory.md
+    - 2.5 NVCC 编译器: chapters/08-nvcc.md
+  - 第三部分：高级 CUDA:
+    - 概述: chapters/part3-advanced.md
+    - 3.1 高级 CUDA API 与特性: chapters/09-advanced-apis.md
+    - 3.2 高级内核编程: chapters/10-advanced-kernel.md
+    - 3.3 CUDA 驱动 API: chapters/11-driver-api.md
+    - 3.4 多 GPU 系统编程: chapters/12-multi-gpu.md
+    - 3.5 CUDA 特性全览: chapters/13-feature-survey.md
+  - 第四部分：CUDA 高级特性:
+    - 概述: chapters/part4-special.md
+    - 4.1 统一内存: chapters/14-unified-memory.md
+    - 4.2 CUDA Graphs: chapters/15-cuda-graphs.md
+    - 4.3 流有序内存分配: chapters/16-stream-memory.md
+    - 4.4 协作组: chapters/17-cooperative-groups.md
+    - 4.5 可编程依赖启动与同步: chapters/18-dependent-launch.md
+    - 4.6 绿色上下文: chapters/19-green-contexts.md
+    - 4.7 延迟加载: chapters/20-lazy-loading.md
+    - 4.8 错误日志管理: chapters/21-error-log.md
+    - 4.9 异步屏障: chapters/22-async-barriers.md
+    - 4.10 流水线: chapters/23-pipelines.md
+    - 4.11 异步数据拷贝: chapters/24-async-copies.md
+    - 4.12 集群启动控制: chapters/25-cluster-launch.md
+    - 4.13 L2 缓存控制: chapters/26-l2-cache.md
+    - 4.14 内存同步域: chapters/27-memory-sync.md
+    - 4.15 进程间通信: chapters/28-ipc.md
+    - 4.16 虚拟内存管理: chapters/29-virtual-memory.md
+    - 4.17 扩展 GPU 内存: chapters/30-extended-gpu-memory.md
+    - 4.18 CUDA 动态并行: chapters/31-dynamic-parallelism.md
+    - 4.19 图形 API 互操作: chapters/32-interop.md
+    - 4.20 驱动入口点访问: chapters/33-driver-entry.md
+  - 技术附录:
+    - 概述: chapters/part5-appendices.md
+    - 5.1 计算能力: chapters/34-compute-capabilities.md
+    - 5.2 CUDA 环境变量: chapters/35-env-variables.md
+    - 5.3 C++ 语言支持: chapters/36-cpp-support.md
+    - 5.4 C/C++ 语言扩展: chapters/37-language-extensions.md
+    - 5.5 浮点运算: chapters/38-floating-point.md
+    - 5.6 设备端可调用 API: chapters/39-device-apis.md
+    - 5.7 CUDA C++ 内存模型: chapters/40-memory-model.md
+    - 5.8 CUDA C++ 执行模型: chapters/41-execution-model.md
