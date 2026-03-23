@@ -26,13 +26,13 @@
 
 ## 2.1.2. 内核
 
-如 [CUDA 编程模型](../01-introduction/programming-model.html#programming-model) 简介中所述，可以在 GPU 上执行并可从主机调用的函数称为内核。内核被编写为由许多并行线程同时运行。
+如 [CUDA 编程模型](../01-introduction/programming-model.html#programming-model) 简介中所述，在 GPU 上执行且可以从主机调用的函数称为内核。内核被编写为由许多并行线程同时运行。
 
 ### 2.1.2.1. 指定内核
 
 内核的代码使用 `__global__` 声明说明符来指定。这向编译器表明，此函数将以允许从内核启动调用的方式为 GPU 编译。内核启动是一个启动内核运行的操作，通常从 CPU 发起。内核是返回类型为 `void` 的函数。
 
-```cpp
+```cuda
 // 内核定义
 __global__ void vecAdd(float* A, float* B, float* C)
 {
@@ -44,12 +44,12 @@ __global__ void vecAdd(float* A, float* B, float* C)
 
 将并行执行内核的线程数量被指定为内核启动的一部分。这称为执行配置。同一内核的不同调用可以使用不同的执行配置，例如不同数量的线程或线程块。
 
-从 CPU 代码启动内核有两种方式：[三重尖括号表示法](#intro-cpp-launching-kernels-triple-chevron) 和 `cudaLaunchKernelEx`。三重尖括号表示法是最常见的启动内核方式，此处将进行介绍。使用 `cudaLaunchKernelEx` 启动内核的示例在 [第 3.1.1 节](../03-advanced/advanced-host-programming.html#advanced-host-cudalaunchkernelex) 中展示并详细讨论。
+从 CPU 代码启动内核有两种方式：[三重尖括号表示法](#intro-cpp-launching-kernels-triple-chevron) 和 `cudaLaunchKernelEx`。这里介绍最常用的内核启动方式——三重尖括号表示法。使用 `cudaLaunchKernelEx` 启动内核的示例在 [第 3.1.1 节](../03-advanced/advanced-host-programming.html#advanced-host-cudalaunchkernelex) 中展示并详细讨论。
 #### 2.1.2.2.1. 三重尖括号表示法
 
-三重尖括号表示法是一种 [CUDA C++ 语言扩展](../05-appendices/cpp-language-extensions.html#execution-configuration)，用于启动内核。之所以称为三重尖括号，是因为它使用三个尖括号字符来封装内核启动的执行配置，即 `<<< >>>`。执行配置参数在尖括号内以逗号分隔的列表形式指定，类似于函数调用的参数。启动 `vecAdd` 内核的语法如下所示。
+三重尖括号表示法是一种 [CUDA C++ 语言扩展](../05-appendices/cpp-language-extensions.html#execution-configuration)，用于启动内核。它之所以被称为三重尖括号，是因为它使用三个尖括号字符来封装内核启动的执行配置，即 `<<< >>>`。执行配置参数在尖括号内以逗号分隔的列表形式指定，类似于函数调用的参数。下面展示了启动 `vecAdd` 内核的语法。
 
-```cpp
+```cuda
  __global__ void vecAdd(float* A, float* B, float* C)
  {
 
@@ -74,7 +74,7 @@ int main()
 
 当使用二维或三维网格或线程块时，CUDA 类型 `dim3` 被用作网格和线程块的维度参数。下面的代码片段展示了一个 `MatAdd` 内核的启动，它使用了一个 16x16 的线程块网格，每个线程块是 8x8。
 
-```cpp
+```cuda
 int main()
 {
     ...
@@ -87,7 +87,7 @@ int main()
 
 ### 2.1.2.3. 线程和网格索引内置变量
 
-在内核代码中，CUDA 提供了内置变量来访问执行配置的参数以及线程或线程块的索引。
+在内核代码中，CUDA 提供了内置变量来访问执行配置的参数以及线程或块的索引。
 
 > threadIdx
 > 给出线程在其所属线程块内的索引。线程块中的每个线程将拥有不同的索引。
@@ -96,15 +96,15 @@ int main()
 > blockIdx
 > 提供线程块在线程网格内的索引。每个线程块将拥有不同的索引。
 > gridDim
-> 提供线程网格的维度，该维度在内核启动时通过执行配置指定。
+> 提供线程网格的维度，这些维度在内核启动时的执行配置中指定。
 
-这些内置变量都是具有 `.x`、`.y` 和 `.z` 成员的三分量向量。启动配置中未指定的维度将默认为 1。`threadIdx` 和 `blockIdx` 的索引从零开始。也就是说，`threadIdx.x` 的取值范围是从 0 到 `blockDim.x-1`（包含）。`.y` 和 `.z` 在其各自的维度上遵循相同的规则。
+这些内置变量都是具有 `.x`、`.y` 和 `.z` 成员的三分量向量。启动配置中未指定的维度将默认为 1。`threadIdx` 和 `blockIdx` 的索引从 0 开始。也就是说，`threadIdx.x` 的取值范围是从 0 到 `blockDim.x-1`（包含）。`.y` 和 `.z` 在其各自的维度上遵循相同的规则。
 
 类似地，`blockIdx.x` 的取值范围是从 0 到 `gridDim.x-1`（包含），`.y` 和 `.z` 维度也分别遵循相同的规则。
 
 这些变量使得单个线程能够识别它应该执行哪些工作。回到 `vecAdd` 内核，该内核接受三个参数，每个参数都是一个浮点数向量。内核执行 `A` 和 `B` 的逐元素加法，并将结果存储在 `C` 中。内核被并行化，使得每个线程执行一次加法操作。它计算哪个元素由其线程索引和网格索引决定。
 
-```cpp
+```cuda
 __global__ void vecAdd(float* A, float* B, float* C)
 {
    // 计算此线程负责计算哪个元素
@@ -123,15 +123,15 @@ int main()
 }
 ```
 
-在此示例中，使用了 4 个线程块，每个线程块包含 256 个线程，来对一个包含 1024 个元素的向量进行加法运算。在第一个线程块中，`blockIdx.x` 将为 0，因此每个线程的 `workIndex` 将简单地等于其 `threadIdx.x`。在第二个线程块中，`blockIdx.x` 将为 1，因此 `blockDim.x * blockIdx.x` 将等于 `blockDim.x`，在本例中为 256。第二个线程块中每个线程的 `workIndex` 将是其 `threadIdx.x + 256`。在第三个线程块中，`workIndex` 将是 `threadIdx.x + 512`。
+在这个例子中，使用了 4 个包含 256 个线程的线程块来对一个包含 1024 个元素的向量进行加法运算。在第一个线程块中，`blockIdx.x` 为 0，因此每个线程的 `workIndex` 就是其 `threadIdx.x`。在第二个线程块中，`blockIdx.x` 为 1，所以 `blockDim.x * blockIdx.x` 等于 `blockDim.x`，在本例中为 256。第二个线程块中每个线程的 `workIndex` 将是其 `threadIdx.x + 256`。在第三个线程块中，`workIndex` 将是 `threadIdx.x + 512`。
 
 这种 `workIndex` 的计算对于一维并行化非常常见。扩展到二维或三维时，通常在各个维度上遵循相同的模式。
 
 #### 2.1.2.3.1. 边界检查
 
-上面给出的示例假设向量的长度是线程块大小（本例中为 256 个线程）的整数倍。为了使内核能够处理任意长度的向量，我们可以添加检查，确保内存访问不会超出数组的边界，如下所示，然后启动一个线程块，其中将包含一些不活跃的线程。
+上面给出的例子假设向量的长度是线程块大小（本例中为 256 个线程）的整数倍。为了使内核能够处理任意长度的向量，我们可以添加检查，确保内存访问不会超出数组的边界，如下所示，然后启动一个线程块，其中将包含一些不活跃的线程。
 
-```cpp
+```cuda
 __global__ void vecAdd(float* A, float* B, float* C, int vectorLength)
 {
      // 计算此线程负责计算哪个元素
@@ -145,19 +145,19 @@ __global__ void vecAdd(float* A, float* B, float* C, int vectorLength)
 }
 ```
 
-使用上述内核代码，可以启动比所需更多的线程，而不会导致对数组的越界访问。当 `workIndex` 超过 `vectorLength` 时，线程会退出且不执行任何工作。在一个线程块中启动不执行任何工作的额外线程不会产生很大的开销成本，但是应避免启动其中所有线程都不执行任何工作的线程块。现在，该内核可以处理长度不是线程块大小整数倍的向量。
-所需线程块的数量可以通过计算所需线程数（本例中为向量长度）除以每个线程块的线程数，并向上取整得到。也就是说，将所需线程数除以每个线程块的线程数进行整数除法，然后向上取整。下面给出了一种常见的单行整数除法表达式。通过在整数除法前加上 `threads - 1`，其行为类似于向上取整函数，仅当向量长度不能被每个线程块的线程数整除时，才会增加一个额外的线程块。
+使用上面的内核代码，可以启动比所需更多的线程，而不会导致对数组的越界访问。当 `workIndex` 超过 `vectorLength` 时，线程会退出且不执行任何工作。在一个线程块中启动不执行任何工作的额外线程不会产生很大的开销成本，但是应避免启动其中没有线程执行工作的线程块。现在，这个内核可以处理长度不是线程块大小整数倍的向量。
+所需线程块的数量可以通过计算所需线程数（本例中为向量长度）除以每个线程块的线程数，然后向上取整得到。也就是说，将所需线程数除以每个线程块的线程数进行整数除法，然后向上舍入。下面给出了将其表示为单个整数除法的常用方法。通过在整数除法前加上 `threads - 1`，这类似于一个向上取整函数，仅当向量长度不能被每个线程块的线程数整除时，才会增加一个额外的线程块。
 
-```cpp
+```cuda
 // vectorLength 是一个存储向量元素数量的整数
 int threads = 256;
 int blocks = (vectorLength + threads-1)/threads;
 vecAdd<<<blocks, threads>>>(devA, devB, devC, vectorLength);
 ```
 
-[CUDA 核心计算库 (CCCL)](https://nvidia.github.io/cccl/) 提供了一个便捷的工具 `cuda::ceil_div`，用于执行这种向上取整除法，以计算启动内核所需的线程块数量。通过包含头文件 `<cuda/cmath>` 即可使用此工具。
+[CUDA 核心计算库 (CCCL)](https://nvidia.github.io/cccl/) 提供了一个便捷的工具 `cuda::ceil_div`，用于执行这种向上取整除法来计算内核启动所需的线程块数量。通过包含头文件 `<cuda/cmath>` 即可使用此工具。
 
-```cpp
+```cuda
 // vectorLength 是一个存储向量元素数量的整数
 int threads = 256;
 int blocks = cuda::ceil_div(vectorLength, threads);
@@ -174,9 +174,9 @@ vecAdd<<<blocks, threads>>>(devA, devB, devC, vectorLength);
 
 统一内存是 CUDA 运行时的一项功能，它让 NVIDIA 驱动程序管理主机和设备之间的数据移动。内存可以使用 `cudaMallocManaged` API 分配，或者通过使用 `__managed__` 说明符声明变量来分配。NVIDIA 驱动程序将确保无论 GPU 还是 CPU 尝试访问该内存时，内存都是可访问的。
 
-下面的代码展示了一个完整的函数，用于启动 `vecAdd` 内核，该内核为将在 GPU 上使用的输入和输出向量使用了统一内存。`cudaMallocManaged` 分配了可以从 CPU 或 GPU 访问的缓冲区。这些缓冲区使用 `cudaFree` 释放。
+下面的代码展示了一个启动 `vecAdd` 内核的完整函数，该函数为将在 GPU 上使用的输入和输出向量使用了统一内存。`cudaMallocManaged` 分配可以从 CPU 或 GPU 访问的缓冲区。这些缓冲区使用 `cudaFree` 释放。
 
-```cpp
+```cuda
 void unifiedMemExample(int vectorLength)
 {
     // 指向内存向量的指针
@@ -207,11 +207,11 @@ void unifiedMemExample(int vectorLength)
     // 确认 CPU 和 GPU 得到相同的结果
     if(vectorApproximatelyEqual(C, comparisonResult, vectorLength))
     {
-        printf("统一内存：CPU 和 GPU 结果匹配\n");
+        printf("Unified Memory: CPU and GPU answers match\n");
     }
     else
     {
-        printf("统一内存：错误 - CPU 和 GPU 结果不匹配\n");
+        printf("Unified Memory: Error - CPU and GPU answers do not match\n");
     }
 
     // 清理
@@ -228,7 +228,7 @@ void unifiedMemExample(int vectorLength)
 
 显式管理内存分配和内存空间之间的数据迁移有助于提升应用程序性能，尽管这会使代码更加冗长。以下代码使用 `cudaMalloc` 在 GPU 上显式分配内存。GPU 上的内存使用与前一示例中统一内存相同的 `cudaFree` API 进行释放。
 
-```cpp
+```cuda
 void explicitMemExample(int vectorLength)
 {
     // 主机内存指针
@@ -279,11 +279,11 @@ void explicitMemExample(int vectorLength)
     // 确认 CPU 和 GPU 得到相同的结果
     if(vectorApproximatelyEqual(C, comparisonResult, vectorLength))
     {
-        printf("显式内存管理：CPU 和 GPU 结果匹配\n");
+        printf("显式内存管理：CPU 与 GPU 结果匹配\n");
     }
     else
     {
-        printf("显式内存管理：错误 - CPU 和 GPU 结果不匹配\n");
+        printf("显式内存管理：错误 - CPU 与 GPU 结果不匹配\n");
     }
 
     // 清理
@@ -296,32 +296,32 @@ void explicitMemExample(int vectorLength)
     free(comparisonResult);
 }
 ```
-CUDA API `cudaMemcpy` 用于将数据从驻留在 CPU 上的缓冲区复制到驻留在 GPU 上的缓冲区。除了目标指针、源指针和字节大小外，`cudaMemcpy` 的最后一个参数是 `cudaMemcpyKind_t`。其取值可以是 `cudaMemcpyHostToDevice`（用于从 CPU 复制到 GPU）、`cudaMemcpyDeviceToHost`（用于从 GPU 复制到 CPU）或 `cudaMemcpyDeviceToDevice`（用于 GPU 内部或 GPU 之间的复制）。
+CUDA API `cudaMemcpy` 用于将数据从驻留在 CPU 上的缓冲区复制到驻留在 GPU 上的缓冲区。除了目标指针、源指针和字节大小外，`cudaMemcpy` 的最后一个参数是 `cudaMemcpyKind_t`。其值可以是 `cudaMemcpyHostToDevice`（用于从 CPU 复制到 GPU）、`cudaMemcpyDeviceToHost`（用于从 GPU 复制到 CPU）或 `cudaMemcpyDeviceToDevice`（用于 GPU 内部或 GPU 之间的复制）。
 
-在此示例中，`cudaMemcpyDefault` 作为最后一个参数传递给 `cudaMemcpy`。这将使 CUDA 根据源指针和目标指针的值来确定要执行的复制类型。
+在此示例中，`cudaMemcpyDefault` 作为最后一个参数传递给 `cudaMemcpy`。这将导致 CUDA 根据源指针和目标指针的值来确定要执行的复制类型。
 
-`cudaMemcpy` API 是同步的。也就是说，在复制完成之前它不会返回。异步复制将在 [在 CUDA 流中启动内存传输](asynchronous-execution.html#async-execution-memory-transfers) 中介绍。
+`cudaMemcpy` API 是同步的。也就是说，在复制完成之前它不会返回。异步复制在 [在 CUDA 流中启动内存传输](asynchronous-execution.html#async-execution-memory-transfers) 中介绍。
 
-代码使用 `cudaMallocHost` 在 CPU 上分配内存。这会在主机上分配[页锁定内存](understanding-memory.html#memory-page-locked-host-memory)，它可以提高复制性能，并且对于[异步](asynchronous-execution.html#async-execution-memory-transfers)内存传输是必需的。通常，对于将在与 GPU 进行数据传输中使用的 CPU 缓冲区，使用页锁定内存是一种良好的做法。如果锁定的主机内存过多，某些系统的性能可能会下降。最佳实践是仅锁定将用于向 GPU 发送或从 GPU 接收数据的缓冲区。
+代码使用 `cudaMallocHost` 在 CPU 上分配内存。这会在主机上分配[页锁定内存](understanding-memory.html#memory-page-locked-host-memory)，这可以提高复制性能，并且对于[异步](asynchronous-execution.html#async-execution-memory-transfers)内存传输是必需的。通常，对于将在与 GPU 进行数据传输中使用的 CPU 缓冲区，使用页锁定内存是一种良好实践。如果锁定的主机内存过多，某些系统的性能可能会下降。最佳实践是仅锁定将用于向 GPU 发送或从 GPU 接收数据的缓冲区。
 
 ### 2.1.3.3. 内存管理与应用程序性能
 
-如上例所示，显式内存管理更为繁琐，需要程序员指定主机和设备之间的复制操作。这正是显式内存管理的优点和缺点：它提供了对数据在主机和设备之间何时复制、内存驻留在何处以及具体在何处分配内存的更多控制。显式内存管理可以通过控制内存传输并使其与其他计算重叠来提供性能优化的机会。
+如上例所示，显式内存管理更为繁琐，需要程序员指定主机和设备之间的复制操作。这正是显式内存管理的优点和缺点：它提供了对数据在主机和设备之间何时复制、内存驻留在何处以及具体在何处分配内存的更多控制。显式内存管理可以通过控制内存传输并将其与其他计算重叠来提供性能优化的机会。
 
-当使用统一内存时，有一些 CUDA API（将在[内存建议与预取](understanding-memory.html#memory-mem-advise-prefetch)中介绍）可以向管理内存的 NVIDIA 驱动程序提供提示，从而在使用统一内存时也能获得一些使用显式内存管理所带来的性能优势。
+当使用统一内存时，有一些 CUDA API（将在[内存建议与预取](understanding-memory.html#memory-mem-advise-prefetch)中介绍），它们向管理内存的 NVIDIA 驱动程序提供提示，这可以在使用统一内存时实现一些使用显式内存管理的性能优势。
 
 ## 2.1.4. 同步 CPU 与 GPU
 
-如[启动内核](#intro-cpp-launching-kernels)中所述，内核启动相对于调用它的 CPU 线程是异步的。这意味着 CPU 线程的控制流将在内核完成之前（甚至可能在内核启动之前）继续执行。为了保证在内核代码继续执行之前内核已完成执行，需要使用某种同步机制。
+如[启动内核](#intro-cpp-launching-kernels)中所述，内核启动相对于调用它们的 CPU 线程是异步的。这意味着 CPU 线程的控制流将在内核完成之前（甚至可能在内核启动之前）继续执行。为了保证在内核代码继续执行之前内核已完成执行，需要某种同步机制。
 
-同步 GPU 和主机线程的最简单方法是使用 `cudaDeviceSynchronize`，它会阻塞主机线程，直到 GPU 上所有先前发出的工作都已完成。在本章的示例中，这已经足够，因为 GPU 上只执行单一操作。在更大的应用程序中，可能有多个[流](asynchronous-execution.html#cuda-streams)在 GPU 上执行工作，而 `cudaDeviceSynchronize` 将等待所有流中的工作完成。在这些应用程序中，建议使用[流同步](asynchronous-execution.html#async-execution-stream-synchronization) API 仅与特定流同步，或使用[CUDA 事件](asynchronous-execution.html#cuda-events)。这些内容将在[异步执行](asynchronous-execution.html#asynchronous-execution)章节中详细介绍。
+同步 GPU 和主机线程的最简单方法是使用 `cudaDeviceSynchronize`，它会阻塞主机线程，直到 GPU 上所有先前发出的工作都已完成。在本章的示例中，这已经足够，因为 GPU 上只执行单个操作。在更大的应用程序中，可能有多个[流](asynchronous-execution.html#cuda-streams)在 GPU 上执行工作，而 `cudaDeviceSynchronize` 将等待所有流中的工作完成。在这些应用程序中，建议使用[流同步](asynchronous-execution.html#async-execution-stream-synchronization) API 仅与特定流同步，或使用[CUDA 事件](asynchronous-execution.html#cuda-events)。这些将在[异步执行](asynchronous-execution.html#asynchronous-execution)章节中详细介绍。
 ## 2.1.5. 完整示例
 
-以下清单展示了本章介绍的简单向量加法内核的完整代码，以及用于检查验证所得答案是否正确的主机代码和工具函数。这些示例默认使用长度为 1024 的向量，但接受不同的向量长度作为可执行文件的命令行参数。
+以下清单展示了本章介绍的简单向量加法内核的完整代码，以及用于检查并验证所得答案是否正确的主机代码和工具函数。这些示例默认使用长度为 1024 的向量，但接受不同的向量长度作为可执行文件的命令行参数。
 
- 统一内存
+**统一内存**
 
-```cpp
+```cuda
 #include <cuda_runtime_api.h>
 #include <memory.h>
 #include <cstdlib>
@@ -428,9 +428,9 @@ int main(int argc, char** argv)
 }
 ```
 
- 显式内存管理
+**显式内存管理**
 
-```cpp
+```cuda
 #include <cuda_runtime_api.h>
 #include <memory.h>
 #include <cstdlib>
@@ -558,9 +558,9 @@ int main(int argc, char** argv)
     return 0;
 }
 ```
-可以使用 nvcc 按以下方式构建和运行：
+可以使用 nvcc 按如下方式构建和运行这些示例：
 
-```cpp
+```bash
 $ nvcc vecAdd_unifiedMemory.cu -o vecAdd_unifiedMemory
 $ ./vecAdd_unifiedMemory
 Unified Memory: CPU and GPU answers match
@@ -568,7 +568,7 @@ $ ./vecAdd_unifiedMemory 4096
 Unified Memory: CPU and GPU answers match
 ```
 
-```cpp
+```bash
 $ nvcc vecAdd_explicitMemory.cu -o vecAdd_explicitMemory
 $ ./vecAdd_explicitMemory
 Explicit Memory: CPU and GPU answers match
@@ -576,19 +576,19 @@ $ ./vecAdd_explicitMemory 4096
 Explicit Memory: CPU and GPU answers match
 ```
 
-在这些示例中，所有线程都在执行独立的工作，不需要相互协调或同步。通常，线程需要与其他线程协作和通信以完成其工作。线程块内的线程可以通过[共享内存](writing-cuda-kernels.html#writing-cuda-kernels-shared-memory)共享数据，并通过同步来协调内存访问。
+在这些示例中，所有线程都在执行独立的工作，不需要彼此协调或同步。然而，线程通常需要与其他线程协作和通信以完成其工作。线程块内的线程可以通过[共享内存](writing-cuda-kernels.html#writing-cuda-kernels-shared-memory)共享数据，并通过同步来协调内存访问。
 
-线程块级别最基本的同步机制是 `__syncthreads()` 内部函数，它充当一个屏障，在允许任何线程继续执行之前，线程块中的所有线程都必须在此处等待。[共享内存](writing-cuda-kernels.html#writing-cuda-kernels-shared-memory)给出了一个使用共享内存的示例。
+线程块级别最基本的同步机制是 `__syncthreads()` 内部函数，它充当一个屏障，线程块内的所有线程必须在此等待，直到所有线程都到达该点后，才允许任何线程继续执行。[共享内存](writing-cuda-kernels.html#writing-cuda-kernels-shared-memory)部分给出了一个使用共享内存的示例。
 
-为了实现高效协作，共享内存被设计为靠近每个处理器核心的低延迟内存（类似于 L1 缓存），并且 `__syncthreads()` 被设计为轻量级操作。`__syncthreads()` 仅同步单个线程块内的线程。CUDA 编程模型不支持线程块之间的同步。[协作组](../04-special-topics/cooperative-groups.html#cooperative-groups)提供了设置除单个线程块之外的同步域的机制。
+为了实现高效协作，共享内存被设计为靠近每个处理器核心的低延迟内存（类似于 L1 缓存），而 `__syncthreads()` 则被设计为轻量级操作。`__syncthreads()` 仅同步单个线程块内的线程。CUDA 编程模型不支持线程块之间的同步。[协作组](../04-special-topics/cooperative-groups.html#cooperative-groups)提供了设置除单个线程块之外的其他同步域的机制。
 
-通常在同步保持在单个线程块内时，可以获得最佳性能。线程块仍然可以使用[原子内存函数](writing-cuda-kernels.html#writing-cuda-kernels-atomics)处理共同的结果，这将在后续章节中介绍。
+通常，将同步保持在单个线程块内可以获得最佳性能。线程块仍然可以使用[原子内存函数](writing-cuda-kernels.html#writing-cuda-kernels-atomics)来处理共同的结果，这将在后续章节中介绍。
 
-[第 3.2.4 节](../03-advanced/advanced-kernel-programming.html#advanced-kernels-advanced-sync-primitives)涵盖了 CUDA 同步原语，这些原语提供了非常细粒度的控制，以最大化性能和资源利用率。
+[第 3.2.4 节](../03-advanced/advanced-kernel-programming.html#advanced-kernels-advanced-sync-primitives)涵盖了 CUDA 同步原语，这些原语提供了非常精细的控制，以最大化性能和资源利用率。
 
 ## 2.1.6. 运行时初始化
 
-CUDA 运行时为系统中的每个设备创建一个 [CUDA 上下文](../03-advanced/driver-api.html#driver-api-context)。此上下文是该设备的主上下文，并在第一个需要该设备上活动上下文的运行时函数调用时初始化。该上下文在应用程序的所有主机线程之间共享。作为上下文创建的一部分，设备代码会在必要时进行[即时编译](../01-introduction/cuda-platform.html#cuda-platform-just-in-time-compilation)并加载到设备内存中。这一切都是透明进行的。CUDA 运行时创建的主上下文可以从驱动 API 访问以实现互操作性，如[运行时与驱动 API 的互操作性](../03-advanced/driver-api.html#driver-api-interop-with-runtime)所述。
+CUDA 运行时为系统中的每个设备创建一个[CUDA 上下文](../03-advanced/driver-api.html#driver-api-context)。此上下文是该设备的主上下文，并在第一个需要该设备上活动上下文的运行时函数调用时初始化。该上下文由应用程序的所有主机线程共享。作为上下文创建的一部分，设备代码会在必要时进行[即时编译](../01-introduction/cuda-platform.html#cuda-platform-just-in-time-compilation)并加载到设备内存中。这一切都是透明进行的。CUDA 运行时创建的主上下文可以从驱动 API 访问，以实现互操作性，如[运行时与驱动 API 的互操作性](../03-advanced/driver-api.html#driver-api-interop-with-runtime)所述。
 自 CUDA 12.0 起，`cudaInitDevice` 和 `cudaSetDevice` 调用会初始化运行时以及与指定设备关联的主[上下文](../03-advanced/driver-api.html#driver-api-context)。如果运行时 API 请求在这些调用之前发生，运行时将隐式使用设备 0 并根据需要自我初始化以处理这些请求。这在计时运行时函数调用以及解释首次调用运行时返回的错误代码时非常重要。在 CUDA 12.0 之前，`cudaSetDevice` 不会初始化运行时。
 
 `cudaDeviceReset` 会销毁当前设备的主上下文。如果在主上下文被销毁后调用 CUDA 运行时 API，将为该设备创建一个新的主上下文。
@@ -598,9 +598,9 @@ CUDA 运行时为系统中的每个设备创建一个 [CUDA 上下文](../03-adv
 
 ## 2.1.7. CUDA 中的错误检查
 
-每个 CUDA API 都返回一个枚举类型 `cudaError_t` 的值。在示例代码中，这些错误通常未被检查。在生产应用程序中，最佳实践是始终检查并管理每个 CUDA API 调用的返回值。当没有错误时，返回的值为 `cudaSuccess`。许多应用程序选择实现一个实用宏，如下所示：
+每个 CUDA API 都会返回一个枚举类型 `cudaError_t` 的值。在示例代码中，这些错误通常不会被检查。在生产应用程序中，最佳实践是始终检查并管理每个 CUDA API 调用的返回值。当没有错误时，返回的值为 `cudaSuccess`。许多应用程序选择实现一个实用宏，如下所示：
 
-```cpp
+```cuda
 #define CUDA_CHECK(expr_to_check) do {            \
     cudaError_t result  = expr_to_check;          \
     if(result != cudaSuccess)                     \
@@ -617,29 +617,29 @@ CUDA 运行时为系统中的每个设备创建一个 [CUDA 上下文](../03-adv
 
 此宏使用 `cudaGetErrorString` API，该 API 返回一个描述特定 `cudaError_t` 值含义的人类可读字符串。使用上述宏，应用程序将在 `CUDA_CHECK(expression)` 宏内调用 CUDA 运行时 API，如下所示：
 
-```cpp
+```cuda
     CUDA_CHECK(cudaMalloc(&devA, vectorLength*sizeof(float)));
     CUDA_CHECK(cudaMalloc(&devB, vectorLength*sizeof(float)));
     CUDA_CHECK(cudaMalloc(&devC, vectorLength*sizeof(float)));
 ```
-如果这些调用检测到错误，将使用此宏将错误打印到 `stderr`。此宏适用于小型项目，但在大型应用程序中可以适配到日志系统或其他错误处理机制。
+如果这些调用检测到错误，将使用此宏将其打印到 `stderr`。此宏在小型项目中很常见，但在大型应用程序中可以适配到日志系统或其他错误处理机制。
 
 !!! note "注意"
-    需要注意的是，从任何 CUDA API 调用返回的错误状态也可能指示先前发出的异步操作中的错误。章节 [异步错误处理](#intro-cpp-error-checking-asynchronous) 对此进行了更详细的介绍。
+    需要注意的是，任何 CUDA API 调用返回的错误状态也可能指示先前发出的异步操作中的错误。[异步错误处理](#intro-cpp-error-checking-asynchronous) 一节将对此进行更详细的介绍。
 
 ### 2.1.7.1. 错误状态
 
 CUDA 运行时为每个主机线程维护一个 `cudaError_t` 状态。该值默认为 `cudaSuccess`，并在发生错误时被覆盖。`cudaGetLastError` 返回当前错误状态，然后将其重置为 `cudaSuccess`。或者，`cudaPeekLastError` 返回错误状态而不重置它。
 
-使用[三重尖括号表示法](#intro-cpp-launching-kernels-triple-chevron)启动的内核不返回 `cudaError_t`。最佳实践是在内核启动后立即检查错误状态，以检测内核启动中的即时错误或内核启动前的[异步错误](#intro-cpp-error-checking-asynchronous)。在内核启动后立即检查错误状态时，值为 `cudaSuccess` 并不意味着内核已成功执行甚至已开始执行。它仅验证传递给运行时的内核启动参数和执行配置没有触发任何错误，并且错误状态不是内核启动之前发生的先前错误或异步错误。
+使用[三重尖括号表示法](#intro-cpp-launching-kernels-triple-chevron)启动的内核不返回 `cudaError_t`。良好的做法是在内核启动后立即检查错误状态，以检测内核启动中的即时错误或内核启动前的[异步错误](#intro-cpp-error-checking-asynchronous)。在内核启动后立即检查错误状态时，值为 `cudaSuccess` 并不意味着内核已成功执行甚至已开始执行。它仅验证传递给运行时的内核启动参数和执行配置没有触发任何错误，并且错误状态不是内核启动之前的先前错误或异步错误。
 
 ### 2.1.7.2. 异步错误
 
 CUDA 内核启动和许多运行时 API 是异步的。异步 CUDA 运行时 API 将在[异步执行](asynchronous-execution.html#asynchronous-execution)中详细讨论。每当发生错误时，CUDA 错误状态就会被设置和覆盖。这意味着在异步操作执行期间发生的错误，只有在下次检查错误状态时才会被报告。如前所述，这可能是对 `cudaGetLastError`、`cudaPeekLastError` 的调用，也可能是任何返回 `cudaError_t` 的 CUDA API。
 
-当 CUDA 运行时 API 函数返回错误时，错误状态不会被清除。这意味着来自异步错误（例如内核的无效内存访问）的错误代码，将被每个 CUDA 运行时 API 返回，直到通过调用 `cudaGetLastError` 清除了错误状态。
+当 CUDA 运行时 API 函数返回错误时，错误状态不会被清除。这意味着来自异步错误（例如内核的无效内存访问）的错误代码，将在每次调用 CUDA 运行时 API 时返回，直到通过调用 `cudaGetLastError` 清除了错误状态。
 
-```cpp
+```cuda
     vecAdd<<<blocks, threads>>>(devA, devB, devC);
     // 在内核启动后检查错误状态
     CUDA_CHECK(cudaGetLastError());
@@ -653,9 +653,9 @@ CUDA 内核启动和许多运行时 API 是异步的。异步 CUDA 运行时 API
 
 ### 2.1.7.3. CUDA_LOG_FILE
 
-识别 CUDA 错误的另一个好方法是使用 `CUDA_LOG_FILE` 环境变量。设置此环境变量后，CUDA 驱动程序会将遇到的错误消息写入到环境变量中指定的路径文件中。例如，以下不正确的 CUDA 代码尝试启动一个大于任何架构支持的最大线程块。
+识别 CUDA 错误的另一个好方法是使用 `CUDA_LOG_FILE` 环境变量。设置此环境变量后，CUDA 驱动程序会将遇到的错误消息写入到环境变量中指定的路径文件中。例如，以下错误的 CUDA 代码尝试启动一个大于任何架构支持的最大线程块。
 
-```cpp
+```cuda
 __global__ void k()
 { }
 
@@ -669,7 +669,7 @@ int main()
 
 Building and running this, the check after the kernel launch detects and reports the error using the macros illustrated in [Section 2.1.7](#intro-cpp-error-checking).
 
-```cpp
+```bash
 $ nvcc errorLogIllustration.cu -o errlog
 $ ./errlog
 CUDA Runtime Error: /home/cuda/intro-cpp/errorLogIllustration.cu:24:1 = invalid argument
@@ -677,7 +677,7 @@ CUDA Runtime Error: /home/cuda/intro-cpp/errorLogIllustration.cu:24:1 = invalid 
 
 However, when the application is run with `CUDA_LOG_FILE` set to a text file, that file contains a bit more information about the error.
 
-```cpp
+```bash
 $ env CUDA_LOG_FILE=cudaLog.txt ./errlog
 CUDA Runtime Error: /home/cuda/intro-cpp/errorLogIllustration.cu:24:1 = invalid argument
 $ cat cudaLog.txt
@@ -717,17 +717,17 @@ The specifier `__device__` indicates that a function should be compiled for the 
 
 集群中的线程块数量可以由用户定义，CUDA 中支持的可移植集群大小最多为 8 个线程块。请注意，在 GPU 硬件或 MIG 配置太小而无法支持 8 个多处理器的情况下，最大集群大小将相应减小。识别这些较小的配置，以及支持超过 8 个线程块集群大小的较大配置，是特定于架构的，可以使用 `cudaOccupancyMaxPotentialClusterSize` API 进行查询。
 
-集群中的所有线程块保证在单个 GPU 处理集群（GPC）上协同调度并同时执行，并允许集群中的线程块使用[协作组](../04-special-topics/cooperative-groups.html#cooperative-groups) API `cluster.sync()` 执行硬件支持的同步。集群组还提供成员函数，分别使用 `num_threads()` 和 `num_blocks()` API 查询集群组在线程数量或块数量方面的规模。可以使用 `dim_threads()` 和 `dim_blocks()` API 分别查询线程或块在集群组中的秩。
+集群中的所有线程块保证在单个 GPU 处理集群（GPC）上协同调度并同时执行，并允许集群中的线程块使用[协作组](../04-special-topics/cooperative-groups.html#cooperative-groups) API `cluster.sync()` 执行硬件支持的同步。集群组还提供了成员函数，分别使用 `num_threads()` 和 `num_blocks()` API 来查询集群组在线程数量或块数量方面的大小。可以使用 `dim_threads()` 和 `dim_blocks()` API 分别查询线程或块在集群组中的秩。
 
 属于集群的线程块可以访问*分布式共享内存*，这是集群中所有线程块的共享内存的组合。集群中的线程块能够对分布式共享内存中的任何地址进行读取、写入和执行原子操作。[分布式共享内存](writing-cuda-kernels.html#writing-cuda-kernels-distributed-shared-memory) 给出了在分布式共享内存中执行直方图的示例。
-!!! note "注意"
-    在使用集群支持启动的内核中，出于兼容性考虑，`gridDim` 变量仍然表示以线程块数量为单位的大小。可以使用协作组（Cooperative Groups）API 来查找线程块在集群中的层级。
+!!! note "Note"
+    在使用集群支持启动的内核中，出于兼容性考虑，`gridDim` 变量仍然表示以线程块数量为单位的尺寸。可以使用协作组（Cooperative Groups）API 来查找线程块在集群中的层级。
 
 ### 2.1.10.1. 使用三重尖括号表示法启动集群
 
 可以在内核中通过两种方式启用线程块集群：一种是使用编译时内核属性 `__cluster_dims__(X,Y,Z)`，另一种是使用 CUDA 内核启动 API `cudaLaunchKernelEx`。下面的示例展示了如何使用编译时内核属性启动集群。使用内核属性指定的集群大小在编译时是固定的，然后可以使用经典的 `<<< , >>>` 语法启动内核。如果内核使用了编译时集群大小，则在启动内核时无法修改集群大小。
 
-```cpp
+```c++
 // 内核定义
 // 编译时集群大小：X 维度为 2，Y 和 Z 维度为 1
 __global__ void __cluster_dims__(2, 1, 1) cluster_kernel(float *input, float* output)

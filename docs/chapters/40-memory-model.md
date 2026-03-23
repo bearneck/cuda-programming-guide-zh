@@ -48,14 +48,14 @@ enum thread_scope {
 
 ## 5.7.3. 原子性
 
-一个原子操作在其指定的作用域下是原子的，如果满足以下条件之一：
+一个原子操作在其指定的作用域下是原子的，如果：
 
 *   它指定的作用域不是 `cuda::thread_scope_system`，或者
-*   作用域是 `cuda::thread_scope_system` 并且：它影响系统分配内存中的对象且 `pageableMemoryAccess` 为 1 [0]，或者它影响托管内存中的对象且 `concurrentManagedAccess` 为 1，或者它影响映射内存中的对象且 `hostNativeAtomicSupported` 为 1，或者它是一个影响映射内存中自然对齐且大小为 1、2、4、8 或 16 字节的对象的加载或存储操作 [1]，或者它影响 GPU 内存中的对象，仅 GPU 线程访问它，并且在每个访问的源设备 `srcDev` 与对象所在的 GPU（目标设备 `dstDev`）之间，`cudaDeviceGetP2PAttribute(&val, cudaDevP2PAttrNativeAtomicSupported, srcDev, dstDev)` 返回 1，或者仅来自单个 GPU 的 GPU 线程并发访问它。
+*   作用域是 `cuda::thread_scope_system` 并且：它影响系统分配内存中的对象且 `pageableMemoryAccess` 为 1 [0]，或者它影响托管内存中的对象且 `concurrentManagedAccess` 为 1，或者它影响映射内存中的对象且 `hostNativeAtomicSupported` 为 1，或者它是一个影响映射内存中自然对齐且大小为 1、2、4、8 或 16 字节的对象的加载或存储操作 [1]，或者它影响 GPU 内存中的对象，只有 GPU 线程访问它，并且每个访问的源设备 `srcDev` 与对象所在的 GPU `dstDev` 之间的 `cudaDeviceGetP2PAttribute(&val, cudaDevP2PAttrNativeAtomicSupported, srcDev, dstDev)` 返回 1，或者只有来自单个 GPU 的 GPU 线程并发访问它。
 
 !!! note "注意"
     [0] 如果 `PageableMemoryAccessUsesHostPagetables` 为 0，则对内存映射文件或 hugetlbfs 分配的原子操作不是原子的。[1] 如果 `hostNativeAtomicSupported` 为 0，则在系统作用域下影响映射内存中自然对齐且大小为 1、2、4、8 或 16 字节的对象的原子加载或存储操作...
-系统分配内存或映射内存中自然对齐的 16 字节宽对象需要系统支持。NVIDIA 未发现任何系统缺乏此支持，并且没有可用的 CUDA API 查询来检测此类系统。
+在系统分配的内存或映射内存中，自然对齐的 16 字节宽对象需要系统支持。NVIDIA 尚未发现任何系统缺乏此支持，并且没有可用的 CUDA API 查询来检测此类系统。
 
 有关[系统分配内存](../04-special-topics/unified-memory.html#um-details-intro)、[托管内存](../04-special-topics/unified-memory.html#um-details-intro)、[映射内存](../02-basics/understanding-memory.html#memory-mapped-memory)、CPU 内存和 GPU 内存的更多信息，请参阅本指南的相关章节。
 
@@ -63,71 +63,89 @@ enum thread_scope {
 
 对 ISO/IEC IS 14882（C++ 标准）的 [intro.races 第 21 段](https://eel.is/c++draft/intro.races#21) 修改如下：
 
-> 如果一个程序的执行包含两个可能并发的冲突操作，并且
-> 其中至少有一个不是原子操作
+> 如果一个程序的执行包含两个可能并发的冲突操作，并且其中至少有一个不是原子操作
 > 在包含执行了另一个操作的线程的作用域内
-> ，并且两者之间
-> 不存在“先于”关系（除了下面描述的信号处理程序特例），则该执行包含数据竞争。
+> ，并且两者之间没有"先发生于"关系（除了下面描述的信号处理程序的特殊情况），则该程序的执行包含数据竞争。
 > 任何此类数据竞争都会导致未定义行为。[…]
 
 对 ISO/IEC IS 14882（C++ 标准）的 [thread.barrier.class 第 4 段](https://eel.is/c++draft/thread.barrier.class#4) 修改如下：
 
-> 4. 对 `barrier` 成员函数（析构函数除外）的并发调用不会引入数据竞争，
-> 如同它们是原子操作一样。[…]
+> 4. 对 `barrier` 成员函数（其析构函数除外）的并发调用不会引入数据竞争
+> ，就好像它们是原子操作一样
+> 。[…]
 
 对 ISO/IEC IS 14882（C++ 标准）的 [thread.latch.class 第 2 段](https://eel.is/c++draft/thread.latch.class#2) 修改如下：
 
-> 2. 对 `latch` 成员函数（析构函数除外）的并发调用不会引入数据竞争，
-> 如同它们是原子操作一样。[…]
+> 2. 对 `latch` 成员函数（其析构函数除外）的并发调用不会引入数据竞争
+> ，就好像它们是原子操作一样
+> 。[…]
 
 对 ISO/IEC IS 14882（C++ 标准）的 [thread.sema.cnt 第 3 段](https://eel.is/c++draft/thread.sema.cnt#3) 修改如下：
 
-> 3. 对 `counting_semaphore` 成员函数（析构函数除外）的并发调用不会引入数据竞争，
-> 如同它们是原子操作一样。
+> 3. 对 `counting_semaphore` 成员函数（其析构函数除外）的并发调用不会引入数据竞争
+> ，就好像它们是原子操作一样
+> 。
 
 对 ISO/IEC IS 14882（C++ 标准）的 [thread.stoptoken.intro 第 5 段](https://eel.is/c++draft/thread#stoptoken.intro-5) 修改如下：
 
-> 对函数 `request_stop`、`stop_requested` 和 `stop_possible` 的调用不会引入数据竞争，
-> 如同它们是原子操作一样。[…]
+> 对函数 `request_stop`、`stop_requested` 和 `stop_possible` 的调用不会引入数据竞争
+> ，就好像它们是原子操作一样
+> 。[…]
 
 对 ISO/IEC IS 14882（C++ 标准）的 [atomics.fences 第 2 至 4 段](https://eel.is/c++draft/atomics.fences#2) 修改如下：
 
-> 如果存在原子操作 X 和 Y，它们都对某个原子对象 M 进行操作，使得释放栅栏 A 在 X 之前被定序，X 修改 M，Y 在获取栅栏 B 之前被定序，并且 Y 读取由 X 写入的值，或者读取由 X 作为释放操作时其引领的假设释放序列中任何副作用写入的值，
-> 并且每个操作（A、B、X 和 Y）都指定了一个包含执行了其他每个操作的线程的作用域，
-> 则释放栅栏 A 与获取栅栏 B 同步。
-> 如果存在原子操作 X，它对原子对象 M 进行操作，使得释放栅栏 A 在 X 之前被定序，X 修改 M，并且原子操作 B 对 M 执行获取操作，读取由 X 写入的值，或者读取由 X 作为释放操作时其引领的假设释放序列中任何副作用写入的值，
-> 并且每个操作（A、B 和 X）都指定了一个包含执行了其他每个操作的线程的作用域，
-> 则释放栅栏 A 与对原子对象 M 执行获取操作的原子操作 B 同步。
-> 存在一个原子操作 X，使得 A 在 X 之前被定序，X 修改 M，并且 B 读取由 X 写入的值，或者读取由假设的释放序列（如果 X 是一个释放操作，该序列将由 X 领头）中的任何副作用写入的值，
-> 并且每个操作（A、B 和 X）指定的作用域都包含执行其他每个操作的线程。
+> 如果存在原子操作 X 和 Y，它们都对某个原子对象 M 进行操作，使得释放栅栏 A 在 X 之前被定序，X 修改了 M，Y 在获取栅栏 B 之前被定序，并且 Y 读取了由 X 写入的值，或者读取了如果 X 是一个释放操作，它将引领的假设释放序列中任何副作用写入的值，
+> 并且每个操作（A、B、X 和 Y）都指定了一个包含执行了其他每个操作的线程的作用域
+> ，则释放栅栏 A 与获取栅栏 B 同步。
+> 如果存在原子操作 X，它对原子对象 M 进行操作，使得释放栅栏 A 在 X 之前被定序，X 修改了 M，并且原子操作 B 对 M 执行获取操作，读取了由 X 写入的值，或者读取了如果 X 是一个释放操作，它将引领的假设释放序列中任何副作用写入的值，
+> 并且每个操作（A、B 和 X）都指定了一个包含执行了其他每个操作的线程的作用域
+> ，则释放栅栏 A 与对原子对象 M 执行获取操作的原子操作 B 同步。
+> 存在一个原子操作 X，使得 A 在 X 之前被定序，X 修改 M，并且 B 读取由 X 写入的值，或者读取如果 X 是一个释放操作时，由 X 所引领的假设释放序列中的任何副作用所写入的值，
+> 并且每个操作（A、B 和 X）指定的作用域都包含了执行其他每个操作的线程。
 >
 > 一个作为原子对象 M 上的释放操作的原子操作 A，与一个获取栅栏 B 同步，如果
-> 存在 M 上的某个原子操作 X，使得 X 在 B 之前被定序，并且读取由 A 写入的值或由 A 领头的释放序列中的任何副作用写入的值，
-> 并且每个操作（A、B 和 X）指定的作用域都包含执行其他每个操作的线程。
+> 存在 M 上的某个原子操作 X，使得 X 在 B 之前被定序，并且读取由 A 写入的值或由 A 所引领的释放序列中的任何副作用所写入的值，
+> 并且每个操作（A、B 和 X）指定的作用域都包含了执行其他每个操作的线程。
 
 ## 5.7.5. 示例：消息传递
 
-以下示例通过标志 `f`，将存储在变量 `x` 中的消息从线程块 `0` 中的一个线程传递给线程块 `1` 中的一个线程：
+以下示例通过标志 `f`，将线程块 `0` 中的一个线程存储到变量 `x` 的消息传递给线程块 `1` 中的一个线程：
 
-| 初始状态 |
-| --- |
-| int x = 0 , f = 0 ; |
-| 线程 0 块 0 |
-| x = 42 ; cuda :: atomic_ref < int , cuda :: thread_scope_device > flag ( f ); flag . store ( 1 , memory_order_release ); |
-| 线程 0 块 1 |
-| cuda :: atomic_ref < int , cuda :: thread_scope_device > flag ( f ); while ( flag . load ( memory_order_acquire ) != 1 ); assert ( x == 42 ); |
+```cpp
+int x = 0, f = 0;
+```
+
+```cpp
+x = 42;
+cuda::atomic_ref<int, cuda::thread_scope_device> flag(f);
+flag.store(1, memory_order_release);
+```
+
+```cpp
+cuda::atomic_ref<int, cuda::thread_scope_device> flag(f);
+while(flag.load(memory_order_acquire) != 1);
+assert(x == 42);
+```
 
 在以下对前一个示例的变体中，两个线程在没有同步的情况下并发访问 `f` 对象，这导致了**数据竞争**，并表现出**未定义行为**：
 
-| 初始状态 |
-| --- |
-| int x = 0 , f = 0 ; |
-| 线程 0 块 0 |
-| x = 42 ; cuda :: atomic_ref < int , cuda :: thread_scope_block > flag ( f ); flag . store ( 1 , memory_order_release ); // UB: 数据竞争 |
-| 线程 0 块 1 |
-| cuda :: atomic_ref < int , cuda :: thread_scope_device > flag ( f ); while ( flag . load ( memory_order_acquire ) != 1 ); // UB: 数据竞争 assert ( x == 42 ); |
+```cpp
+int x = 0, f = 0;
+```
 
-虽然对 `f` 的内存操作（存储和加载）是原子的，但存储操作的作用域是“线程块作用域”。由于存储是由块 0 的线程 0 执行的，它只包含块 0 的所有其他线程。然而，执行加载的线程在块 1 中，即它不在块 0 中执行的存储操作所包含的作用域内，导致存储和加载不是“原子的”，从而引入了数据竞争。
+```cpp
+x = 42;
+cuda::atomic_ref<int, cuda::thread_scope_block> flag(f);
+flag.store(1, memory_order_release); // UB: 数据竞争
+```
+
+```cpp
+cuda::atomic_ref<int, cuda::thread_scope_device> flag(f);
+while(flag.load(memory_order_acquire) != 1); // UB: 数据竞争
+assert(x == 42);
+```
+
+虽然对 `f` 的内存操作——存储和加载——是原子的，但存储操作的作用域是“线程块作用域”。由于存储是由线程块 0 的线程 0 执行的，它只包含线程块 0 的所有其他线程。然而，执行加载的线程在线程块 1 中，即它不在线程块 0 中执行的存储操作所包含的作用域内，导致存储和加载不是“原子的”，从而引入了数据竞争。
 
 更多示例请参见 [PTX 内存一致性模型测试用例](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#axioms)。
 

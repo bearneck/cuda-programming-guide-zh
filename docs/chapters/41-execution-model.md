@@ -10,20 +10,20 @@
 
 # 5.8. CUDA C++ 执行模型
 
-CUDA C++ 旨在为所有设备执行线程提供[并行前向进展 [intro.progress.9]](https://eel.is/c++draft/intro.progress#9)，以促进使用 CUDA C++ 对现有 C++ 应用程序进行并行化。
+CUDA C++ 旨在为所有设备执行线程提供[并行向前推进 [intro.progress.9]](https://eel.is/c++draft/intro.progress#9)，以促进使用 CUDA C++ 并行化已有的 C++ 应用程序。
 
 [intro.progress]
 
-- [intro.progress.7] : 对于一个提供**并发前向进展保证**的执行线程，只要该线程尚未终止，实现应确保该线程最终会取得进展。[注 5：无论其他执行线程（如果有）是否已经或正在取得进展，此条均适用。最终满足此要求意味着这将在未指定但有限的时间内发生。â 尾注]
-- [intro.progress.9] : 对于一个提供**并行前向进展保证**的执行线程，如果该线程尚未执行任何执行步骤，则实现无需确保该线程最终会取得进展；一旦该线程执行了一个步骤，它就提供**并发前向进展保证**。[注 6：这并未规定何时启动此执行线程的要求，这通常由创建此执行线程的实体指定。例如，一个提供并发前向进展保证的执行线程，以任意顺序一个接一个地执行一组任务中的任务，就满足了这些任务的并行前向进展要求。â 尾注]
+- [intro.progress.7] : 对于一个提供**并发向前推进保证**的执行线程，只要该线程尚未终止，实现应确保该线程最终会取得进展。[注 5：无论其他执行线程（如果有）是否已经或正在取得进展，此条均适用。最终满足此要求意味着这将在未指定但有限的时间内发生。â 尾注]
+- [intro.progress.9] : 对于一个提供**并行向前推进保证**的执行线程，如果该线程尚未执行任何执行步骤，则实现无需确保该线程最终会取得进展；一旦该线程执行了一个步骤，它就提供**并发向前推进保证**。[注 6：这并未规定何时启动此执行线程的要求，这通常由创建此执行线程的实体指定。例如，一个提供并发向前推进保证的执行线程，以任意顺序一个接一个地执行一组任务中的任务，就满足了这些任务的并行向前推进要求。â 尾注]
 
-CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 国际标准 ISO/IEC 14882 â 编程语言 C++](https://eel.is/c++draft/) 草案中 [[intro.progress]](https://eel.is/c++draft/intro.progress) 部分的修改和扩展。修改的部分被明确标出，其差异以**粗体**显示。所有其他部分均为新增内容。
+CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 国际标准 ISO/IEC 14882 â 编程语言 C++](https://eel.is/c++draft/) 草案中 [[intro.progress]](https://eel.is/c++draft/intro.progress) 部分的修改和扩展。修改的部分被明确标出，其差异以**粗体**显示。所有其他部分为新增内容。
 
 ## 5.8.1. 主机线程
 
-由主机实现创建的用于执行 [main](https://en.cppreference.com/w/cpp/language/main_function)、[std::thread](https://en.cppreference.com/w/cpp/thread/thread) 和 [std::jthread](https://en.cppreference.com/w/cpp/thread/jthread) 的执行线程所提供的前向进展，是主机实现的实现定义行为 [[intro.progress]](https://eel.is/c++draft/intro.progress)。通用主机实现应提供并发前向进展。
+由主机实现创建的用于执行 [main](https://en.cppreference.com/w/cpp/language/main_function)、[std::thread](https://en.cppreference.com/w/cpp/thread/thread) 和 [std::jthread](https://en.cppreference.com/w/cpp/thread/jthread) 的执行线程所提供的向前推进，是主机实现的实现定义行为 [[intro.progress]](https://eel.is/c++draft/intro.progress)。通用主机实现应提供并发向前推进。
 
-如果主机实现提供[并发前向进展 [intro.progress.7]](https://eel.is/c++draft/intro.progress#7)，则 CUDA C++ 为设备线程提供[并行前向进展 [intro.progress.9]](https://eel.is/c++draft/intro.progress#9)。
+如果主机实现提供[并发向前推进 [intro.progress.7]](https://eel.is/c++draft/intro.progress#7)，则 CUDA C++ 为设备线程提供[并行向前推进 [intro.progress.9]](https://eel.is/c++draft/intro.progress#9)。
 
 ## 5.8.2. 设备线程
 
@@ -33,7 +33,7 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 - 否则，其**线程块簇**中的所有设备线程最终都应取得进展。[注：不保证其他线程块簇中的线程最终会取得进展。 - 尾注。] [注：这意味着其线程块内的所有设备线程最终都应取得进展。 - 尾注。]
 修改 [[intro.progress.1]](https://eel.is/c++draft/intro.progress#1) 如下（**粗体** 部分为修改内容）：
 
-实现可以假定任何 **主机** 线程最终将执行以下操作之一：
+实现可以假定任何**主机**线程最终将执行以下操作之一：
 
 > 终止，
 > 调用函数
@@ -42,9 +42,9 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 > [thread.thread.this]
 > )，
 > 调用库 I/O 函数，
-> 通过 volatile glvalue 执行访问，
+> 通过 volatile 泛左值进行访问，
 > 执行同步操作或原子操作，或
-> 继续执行平凡无限循环 (
+> 继续执行平凡的无限循环 (
 > [stmt.iter.general]
 > )。
 
@@ -52,7 +52,7 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 
 > 终止，
 > 调用库 I/O 函数，
-> 通过 volatile glvalue 执行访问，除非指定对象具有自动存储期，或
+> 通过 volatile 泛左值进行访问，除非指定对象具有自动存储期，或
 > 执行同步操作或原子读操作，除非指定对象具有自动存储期。
 > [注：设备线程相对于主机线程的某些当前限制是我们已知的实现缺陷，我们可能会随着时间的推移进行修复。
 > 例如，设备线程最终仅对自动存储期对象执行 volatile 或原子操作所导致的未定义行为。
@@ -61,13 +61,13 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 > 例如，为最终仅执行原子写或栅栏操作的程序提供向前进展保证，
 > 会降低整体性能，而实际收益甚微。 - 尾注]
 
-由于对 [intro.progress.1] 的修改，主机线程与设备线程之间向前进展保证差异的示例。
+以下示例展示了由于对 [intro.progress.1] 的修改而导致的主机线程与设备线程之间向前进展保证的差异。
 
 以下示例分别使用 "host.threads.<id>" 和 "device.threads.<id>" 来指代上述主机和设备线程实现假设的列举子条款。
 
 ```cuda
-1// 示例：Execution.Model.Device.0
-2// 结果：网格最终根据 device.threads.4 终止，因为原子对象不具有自动存储期。
+1// 示例: Execution.Model.Device.0
+2// 结果: 网格最终根据 device.threads.4 终止，因为原子对象不具有自动存储期。
 3__global__ void ex0(cuda::atomic_ref<int, cuda::thread_scope_device> atom) {
 4    if (threadIdx.x == 0) {
 5        while(atom.load(cuda::memory_order_relaxed) == 0);
@@ -78,17 +78,17 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 ```
 
 ```cuda
-1// 示例：Execution.Model.Device.1
-2// 允许的结果：没有线程取得进展，因为设备线程不支持 host.threads.2。
+1// 示例: Execution.Model.Device.1
+2// 允许的结果: 没有线程取得进展，因为设备线程不支持 host.threads.2。
 3__global__ void ex1() {
 4    while(true) cuda::std::this_thread::yield();
 5}
 ```
 
 ```cuda
-1// 示例：Execution.Model.Device.2
-2// 允许的结果：没有线程取得进展，因为设备线程不支持 host.threads.4
-3//（对于具有自动存储期的对象，参见 device.threads.3 中的例外情况）。
+1// 示例: Execution.Model.Device.2
+2// 允许的结果: 没有线程取得进展，因为设备线程不支持 host.threads.4
+3// （对于具有自动存储期的对象，参见 device.threads.3 中的例外情况）。
 4__global__ void ex2() {
 5    volatile bool True = true;
 6    while(True);
@@ -96,9 +96,9 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 ```
 
 ```cuda
-1// 示例：Execution.Model.Device.3
-2// 允许的结果：没有线程取得进展，因为设备线程不支持 host.threads.5
-3//（对于具有自动存储期的对象，参见 device.threads.4 中的例外情况）。
+1// 示例: Execution.Model.Device.3
+2// 允许的结果: 没有线程取得进展，因为设备线程不支持 host.threads.5
+3// （对于具有自动存储期的对象，参见 device.threads.4 中的例外情况）。
 4__global__ void ex3() {
 5    cuda::atomic<bool, cuda::thread_scope_thread> True = true;
 6    while(True.load());

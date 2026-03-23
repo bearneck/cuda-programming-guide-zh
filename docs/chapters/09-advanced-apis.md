@@ -26,7 +26,7 @@
 
 ## 3.1.2. 启动集群：
 
-前面章节介绍的[线程块集群](../01-introduction/programming-model.html#programming-model-thread-block-clusters)是计算能力 9.0 及更高版本中可用的一个可选的线程块组织级别，它使应用程序能够保证一个集群的线程块在单个 GPC 上同时执行。这使得比单个 SM 所能容纳的更大的线程组能够交换数据并彼此同步。
+前面章节介绍的[线程块集群](../01-introduction/programming-model.html#programming-model-thread-block-clusters)是计算能力 9.0 及更高版本中可用的一个可选的线程块组织级别，它使应用程序能够保证集群的线程块在单个 GPC 上同时执行。这使得比单个 SM 所能容纳的更大的线程组能够交换数据并相互同步。
 
 [第 2.1.10.1 节](../02-basics/intro-to-cuda-cpp.html#intro-cpp-launching-cluster-triple-chevron)展示了如何使用三重尖括号表示法来指定和启动使用集群的内核。在该节中，使用了 `__cluster_dims__` 注解来指定必须用于启动内核的集群维度。当使用三重尖括号表示法时，集群的大小是隐式确定的。
 
@@ -34,7 +34,7 @@
 
 与[使用三重尖括号表示法启动集群内核](../02-basics/intro-to-cuda-cpp.html#intro-cpp-launching-cluster-triple-chevron)不同，线程块集群的大小可以在每次启动时进行配置。下面的代码示例展示了如何使用 `cudaLaunchKernelEx` 启动集群内核。
 
-```cpp
+```c++
 // Kernel definition
 // No compile time attribute attached to the kernel
 __global__ void cluster_kernel(float *input, float* output)
@@ -81,7 +81,7 @@ All thread blocks will execute in clusters of at least the minimum cluster dimen
 
 当使用 `__cluster_dims__` 注解定义内核时，网格中的集群数量是隐式的，可以通过将网格大小除以指定的集群大小来计算。
 
-```cpp
+```c++
 __cluster_dims__((2, 2, 2)) __global__ void foo();
 
 // 8x8x8 个集群，每个集群包含 2x2x2 个线程块。
@@ -90,17 +90,18 @@ foo<<<dim3(16, 16, 16), dim3(1024, 1, 1)>>>();
 
 在上面的例子中，内核启动为一个 16x16x16 线程块的网格，这意味着使用了 8x8x8 个集群的网格。
 
-内核也可以使用 `__block_size__` 注解，该注解在内核定义时同时指定所需的线程块大小和集群大小。使用此注解时，三重尖括号 `<<<>>>` 中的启动参数表示的是集群维度的网格，而不是线程块维度，如下所示。
+内核也可以使用 `__block_size__` 注解，该注解在内核定义时同时指定所需的块大小和集群大小。使用此注解时，三重尖括号 `<<<>>>` 中的启动参数表示的是集群维度的网格，而不是线程块维度，如下所示。
 
-```cpp
-// 每个线程块的线程数以及每个集群的线程块数作为内核的属性来处理。
+```c++
+// 每个块的线程数和每个集群的块数等实现细节
+// 作为内核的属性来处理。
 __block_size__((1024, 1, 1), (2, 2, 2)) __global__ void foo();
 
 // 8x8x8 个集群。
 foo<<<dim3(8, 8, 8)>>>();
 ```
 
-`__block_size__` 需要两个字段，每个字段都是一个包含 3 个元素的元组。第一个元组表示线程块维度，第二个表示集群大小。如果未传递第二个元组，则假定为 `(1,1,1)`。要指定流，必须在 `<<<>>>` 中将 `1` 和 `0` 作为第二和第三个参数传递，最后传递流。传递其他值将导致未定义行为。
+`__block_size__` 需要两个字段，每个字段都是一个包含 3 个元素的元组。第一个元组表示块维度，第二个表示集群大小。如果未传递第二个元组，则假定为 `(1,1,1)`。要指定流，必须在 `<<<>>>` 内将 `1` 和 `0` 作为第二和第三个参数传递，最后传递流。传递其他值将导致未定义行为。
 
 请注意，同时指定 `__block_size__` 和 `__cluster_dims__` 的第二个元组是非法的。将 `__block_size__` 与空的 `__cluster_dims__` 一起使用也是非法的。当指定了 `__block_size__` 的第二个元组时，意味着启用了“将线程块作为集群”功能，编译器会将 `<<<>>>` 内的第一个参数识别为集群数量，而不是线程块数量。
 
@@ -110,7 +111,7 @@ foo<<<dim3(8, 8, 8)>>>();
 
 在不同 CUDA 流上提交的工作在特定情况下可能并发执行，例如，如果没有事件依赖、没有隐式同步、有足够的资源等。
 
-如果来自不同 CUDA 流的独立操作之间提交了任何针对 NULL 流的 CUDA 操作，则这些操作无法并发运行，除非这些流是非阻塞 CUDA 流。非阻塞流是使用运行时 API `cudaStreamCreateWithFlags()` 并指定 `cudaStreamNonBlocking` 标志创建的。为了提高 GPU 工作并发执行的潜力，建议用户创建非阻塞 CUDA 流。
+如果不同 CUDA 流的独立操作之间提交了任何针对 NULL 流的 CUDA 操作，则这些操作无法并发运行，除非这些流是非阻塞 CUDA 流。非阻塞流是使用带有 `cudaStreamNonBlocking` 标志的 `cudaStreamCreateWithFlags()` 运行时 API 创建的。为了提高 GPU 工作并发执行的潜力，建议用户创建非阻塞 CUDA 流。
 还建议用户选择对其问题而言足够且最不泛化的同步选项。例如，如果要求是让 CPU 等待（阻塞）特定 CUDA 流上的所有工作完成，那么对该流使用 `cudaStreamSynchronize()` 会比使用 `cudaDeviceSynchronize()` 更可取，因为后者会不必要地等待设备上所有 CUDA 流上的 GPU 工作完成。如果要求是让 CPU 以非阻塞方式等待，那么在轮询循环中使用 `cudaStreamQuery()` 并检查其返回值可能更可取。
 
 使用 CUDA 事件（[CUDA 事件](../02-basics/asynchronous-execution.html#cuda-events)）也可以实现类似的同步效果，例如，在该流上记录一个事件并调用 `cudaEventSynchronize()` 以阻塞方式等待该事件捕获的工作完成。同样，这比使用 `cudaDeviceSynchronize()` 更可取且更聚焦。调用 `cudaEventQuery()` 并检查其返回值（例如在轮询循环中）将是一种非阻塞的替代方案。
@@ -131,7 +132,7 @@ foo<<<dim3(8, 8, 8)>>>();
 可以在创建时使用 `cudaStreamCreateWithPriority()` 指定流的相对优先级。允许的优先级范围（按 [最高优先级, 最低优先级] 排序）可以使用 `cudaDeviceGetStreamPriorityRange()` 函数获取。在运行时，GPU 调度器利用流优先级来确定任务执行顺序，但这些优先级仅作为提示而非保证。在选择要启动的工作时，高优先级流中的待处理任务优先于低优先级流中的任务。高优先级任务不会抢占已在运行的低优先级任务。GPU 在任务执行期间不会重新评估工作队列，提高流的优先级不会中断正在进行的工作。流优先级影响任务执行，但不强制执行严格的顺序，因此用户可以利用流优先级来影响任务执行，而无需依赖严格的顺序保证。
 以下代码示例获取当前设备允许的优先级范围，并创建具有最高和最低可用优先级的两个非阻塞 CUDA 流。
 
-```cpp
+```c++
 // 获取此设备的流优先级范围
 int leastPriority, greatestPriority;
 cudaDeviceGetStreamPriorityRange(&leastPriority, &greatestPriority);
@@ -146,8 +147,8 @@ cudaStreamCreateWithPriority(&st_low, cudaStreamNonBlocking, leastPriority);
 
 如前所述，有多种方式可以使流与其他流同步。以下提供了不同粒度级别的常用方法：
 - `cudaDeviceSynchronize()` 等待所有主机线程的所有流中的所有先前命令完成。
-- `cudaStreamSynchronize()` 以一个流作为参数，并等待给定流中的所有先前命令完成。它可用于将主机与特定流同步，同时允许其他流在设备上继续执行。
-- `cudaStreamWaitEvent()` 以一个流和一个事件作为参数（有关事件的描述，请参见 [CUDA 事件](../02-basics/asynchronous-execution.html#cuda-events)），并使在调用 `cudaStreamWaitEvent()` 之后添加到给定流中的所有命令延迟执行，直到给定事件完成。
+- `cudaStreamSynchronize()` 接受一个流作为参数，并等待给定流中的所有先前命令完成。它可以用于使主机与特定流同步，同时允许其他流在设备上继续执行。
+- `cudaStreamWaitEvent()` 接受一个流和一个事件作为参数（有关事件的描述，请参见 [CUDA 事件](../02-basics/asynchronous-execution.html#cuda-events)），并使调用 `cudaStreamWaitEvent()` 之后添加到给定流中的所有命令延迟执行，直到给定事件完成。
 - `cudaStreamQuery()` 为应用程序提供了一种方法来了解流中的所有先前命令是否已完成。
 
 ### 3.1.3.3. 隐式同步
@@ -168,7 +169,7 @@ cudaStreamCreateWithPriority(&st_low, cudaStreamNonBlocking, leastPriority);
 
 ## 3.1.4. 程序化依赖内核启动
 
-正如我们之前讨论的，CUDA 流的语义是内核按顺序执行。这样，如果我们有两个连续的内核，其中第二个内核依赖于第一个内核的结果，程序员可以确信，当第二个内核开始执行时，依赖数据将可用。然而，可能存在这样的情况：第一个内核可能已将后续内核依赖的数据写入全局内存，但它仍有更多工作要做。同样，依赖的第二个内核在需要第一个内核的数据之前可能有一些独立的工作。在这种情况下，可以部分重叠两个内核的执行（假设硬件资源可用）。这种重叠也可以重叠第二个内核的启动开销。除了硬件资源的可用性之外，可以实现的重叠程度取决于内核的具体结构，例如
+正如我们之前讨论的，CUDA 流的语义是内核按顺序执行。这样，如果我们有两个连续的内核，其中第二个内核依赖于第一个内核的结果，程序员可以确信，当第二个内核开始执行时，依赖数据将可用。然而，可能存在这样的情况：第一个内核可能已将后续内核所依赖的数据写入全局内存，但它仍有更多工作要做。同样，依赖的第二个内核在需要第一个内核的数据之前可能有一些独立的工作。在这种情况下，可以部分重叠两个内核的执行（假设硬件资源可用）。这种重叠也可以重叠第二个内核的启动开销。除了硬件资源的可用性之外，可以实现的重叠程度取决于内核的具体结构，例如
 - 第一个内核何时完成第二个内核所依赖的工作？
 - 第二个内核何时开始处理来自第一个内核的数据？
 
@@ -188,9 +189,9 @@ PDL 有三个主要组成部分。
 两个内核的程序化依赖内核启动示例
 #
 
-```cpp
+```c
 __global__ void primary_kernel() {
-    // 应在启动次内核之前完成的初始工作
+    // 应在启动次内核前完成的初始工作
 
     // 触发次内核
     cudaTriggerProgrammaticLaunchCompletion();
@@ -237,12 +238,12 @@ cudaLaunchKernelEx(&config, secondary_kernel);
 
 ## 3.1.5. 批量内存传输
 
-CUDA 开发中的一个常见模式是使用批处理技术。批处理大致意味着我们将多个（通常较小的）任务分组为一个（通常较大的）操作。批处理的各个组成部分不一定完全相同，尽管它们通常是相同的。这种思想的一个例子是 cuBLAS 提供的批量矩阵乘法操作。
-与 CUDA Graphs 和 PDL 类似，批处理的目的是减少与单独分派各个批处理任务相关的开销。就内存传输而言，启动一次内存传输可能会产生一些 CPU 和驱动程序开销。此外，当前形式的常规 `cudaMemcpyAsync()` 函数不一定能为驱动程序提供足够的信息来优化传输，例如关于源和目的地的提示。在 Tegra 平台上，可以选择使用 SM 或复制引擎 (CE) 来执行传输。目前由驱动程序中的启发式算法指定选择。这可能很重要，因为使用 SM 可能会导致更快的传输，但它会占用部分可用的计算能力。另一方面，使用 CE 可能会导致传输速度较慢，但整体应用程序性能更高，因为它让 SM 可以自由执行其他工作。
+CUDA 开发中的一个常见模式是使用批处理技术。批处理大致意味着我们将多个（通常较小的）任务组合成一个（通常较大的）操作。批处理的各个组成部分不一定完全相同，尽管它们通常是相同的。这种思想的一个例子是 cuBLAS 提供的批量矩阵乘法操作。
+与 CUDA Graphs 和 PDL 类似，批处理的目的是减少与单独分派各个批处理任务相关的开销。就内存传输而言，启动一次内存传输可能会产生一些 CPU 和驱动程序开销。此外，当前形式的常规 `cudaMemcpyAsync()` 函数不一定能为驱动程序提供足够的信息来优化传输，例如关于源和目标的提示。在 Tegra 平台上，可以选择使用流式多处理器（SM）或复制引擎（CE）来执行传输。目前由驱动程序中的启发式算法决定使用哪个。这可能很重要，因为使用 SM 可能会导致更快的传输速度，但它会占用部分可用的计算能力。另一方面，使用 CE 可能会导致传输速度较慢，但整体应用程序性能更高，因为它让 SM 可以自由执行其他工作。
 
-这些考虑因素推动了 `cudaMemcpyBatchAsync()` 函数（及其相关函数 `cudaMemcpyBatch3DAsync()`）的设计。这些函数允许优化批处理内存传输。除了源指针和目的指针列表外，该 API 还使用内存复制属性来指定顺序期望，并提供源和目的地位置的提示，以及是否希望传输与计算重叠（目前仅在配备 CE 的 Tegra 平台上支持）。
+这些考虑因素促使了 `cudaMemcpyBatchAsync()` 函数（及其相关函数 `cudaMemcpyBatch3DAsync()`）的设计。这些函数允许优化批处理内存传输。除了源指针和目标指针列表外，该 API 还使用内存复制属性来指定顺序期望，并提供源和目标位置的提示，以及是否希望传输与计算重叠（目前仅在配备 CE 的 Tegra 平台上支持）。
 
-让我们首先考虑最简单的情况：从固定主机内存到固定设备内存的简单批处理数据传输。
+让我们首先考虑最简单的情况：将数据从固定主机内存批量传输到固定设备内存。
 
 清单 4
 从固定主机内存到固定设备内存的同构批处理内存传输示例
@@ -254,7 +255,7 @@ std::vector<void *> dsts(batch_size);
 std::vector<void *> sizes(batch_size);
 
 // 分配源缓冲区和目标缓冲区
-// 使用流号进行初始化
+// 用流编号进行初始化
 for (size_t i = 0; i < batch_size; i++) {
     cudaMallocHost(&srcs[i], sizes[i]);
     cudaMalloc(&dsts[i], sizes[i]);
@@ -273,10 +274,10 @@ cudaMemcpyBatchAsync(&dsts[0], &srcs[0], &sizes[0], batch_size,
     &attrs, &attrsIdxs, 1 /*numAttrs*/, nullptr /*failIdx*/, stream);
 ```
 
-`cudaMemcpyBatchAsync()` 函数的前几个参数看起来是直观合理的。它们由包含源指针和目的指针以及传输大小的数组组成。每个数组都必须有 `batch_size` 个元素。新的信息来自属性。该函数需要一个指向属性数组的指针，以及一个相应的属性索引数组。原则上，也可以传递一个 `size_t` 数组，在此数组中记录失败传输的索引，但在此处传递 `nullptr` 是安全的，在这种情况下，失败的索引将不会被记录。
-接下来看属性部分，在这个例子中传输是同质的。因此我们只使用一个属性，它将应用于所有传输。这由 `attrIndex` 参数控制。原则上，它可以是一个数组。数组的第 *i* 个元素包含属性数组的第 *i* 个元素所应用的第一个传输的索引。在这个例子中，`attrIndex` 被视为一个单元素数组，其值为 '0'，意味着 `attribute[0]` 将应用于索引为 0 及以上的所有传输，换句话说，就是所有的传输。
+`cudaMemcpyBatchAsync()` 函数的前几个参数看起来是直观的。它们由包含源指针和目标指针的数组以及传输大小组成。每个数组必须有 `batch_size` 个元素。新的信息来自属性。该函数需要一个指向属性数组的指针，以及一个对应的属性索引数组。原则上，也可以传递一个 `size_t` 数组，在此数组中记录失败的传输索引，但在此处传递 `nullptr` 是安全的，在这种情况下，失败的索引将不会被记录。
+接下来看属性部分，在这个例子中传输是同质的。因此我们只使用一个属性，它将应用于所有传输。这由 `attrIndex` 参数控制。原则上，它可以是一个数组。数组的第 *i* 个元素包含属性数组的第 *i* 个元素所适用的第一个传输的索引。在这个例子中，`attrIndex` 被视为一个单元素数组，其值为 '0'，意味着 `attribute[0]` 将应用于索引为 0 及以上的所有传输，换句话说，就是所有的传输。
 
-最后，我们注意到我们将 `srcAccessOrder` 属性设置为了 `cudaMemcpySrcAccessOrderStream`。这意味着源数据将按照常规的流顺序被访问。换句话说，内存复制操作将阻塞，直到之前处理来自这些源指针和目标指针中任何一个的数据的内核完成。
+最后，我们注意到我们将 `srcAccessOrder` 属性设置为了 `cudaMemcpySrcAccessOrderStream`。这意味着源数据将按照常规的流顺序被访问。换句话说，内存拷贝操作将阻塞，直到之前处理来自这些源指针和目标指针中任何一个的数据的内核完成。
 
 在下一个例子中，我们将考虑一个更复杂的异构批量传输情况。
 
@@ -284,7 +285,7 @@ cudaMemcpyBatchAsync(&dsts[0], &srcs[0], &sizes[0], batch_size,
 使用临时主机内存到固定设备内存的异构批量内存传输示例
 #
 
-```cpp
+```c
 std::vector<void *> srcs(batch_size);
 std::vector<void *> dsts(batch_size);
 std::vector<void *> sizes(batch_size);
@@ -316,18 +317,18 @@ cudaMemcpyBatchAsync(&dsts[0], &srcs[0], &sizes[0], batch_size,
     &attrs, &attrsIdxs, 2 /*numAttrs*/, nullptr /*failIdx*/, stream);
 ```
 
-这里我们有两种传输：`batch_size-10` 次从固定主机内存到固定设备内存的传输，以及 10 次从主机数组到固定设备内存的传输。此外，`buffer` 数组不仅位于主机上，而且仅存在于当前作用域中——它的地址被称为*临时指针*。这个指针在 API 调用完成后（它是异步的）可能不再有效。要使用这种临时指针执行复制，属性中的 `srcAccessOrder` 必须设置为 `cudaMemcpySrcAccessOrderDuringApiCall`。
+这里我们有两种传输：`batch_size-10` 次从固定主机内存到固定设备内存的传输，以及 10 次从主机数组到固定设备内存的传输。此外，`buffer` 数组不仅位于主机上，而且仅存在于当前作用域中——它的地址就是所谓的*临时指针*。这个指针在 API 调用完成后（它是异步的）可能不再有效。要使用这种临时指针执行拷贝，属性中的 `srcAccessOrder` 必须设置为 `cudaMemcpySrcAccessOrderDuringApiCall`。
 
-现在我们有两个属性，第一个应用于所有索引从 0 开始且小于 `batch_size-10` 的传输。第二个应用于所有索引从 `batch_size-10` 开始且小于 `batch_size` 的传输。
+我们现在有两个属性，第一个适用于所有索引从 0 开始且小于 `batch_size-10` 的传输。第二个适用于所有索引从 `batch_size-10` 开始且小于 `batch_size` 的传输。
 
-如果不是从栈上分配 `buffer` 数组，而是使用 `malloc` 从堆上分配它，那么数据就不再是临时的了。它将一直有效，直到指针被显式释放。在这种情况下，如何安排复制的最佳选择取决于系统是否具有硬件管理内存或通过地址转换实现 GPU 对主机内存的一致性访问（在这种情况下，最好使用流顺序），或者系统不具备这些特性（在这种情况下，立即安排传输最有意义）。在这种情况下，应该为属性的 `srcAccessOrder` 使用值 `cudaMemcpyAccessOrderAny`。
+如果不是从栈上分配 `buffer` 数组，而是使用 `malloc` 从堆上分配它，那么数据就不再是临时的了。它将一直有效，直到指针被显式释放。在这种情况下，如何安排拷贝的最佳选择取决于系统是否具有硬件管理内存或通过地址转换实现 GPU 对主机内存的一致性访问（在这种情况下，最好使用流顺序），或者系统不具备这些特性（在这种情况下，立即安排传输最有意义）。在这种情况下，应该为属性的 `srcAccessOrder` 使用值 `cudaMemcpyAccessOrderAny`。
 `cudaMemcpyBatchAsync` 函数还允许程序员提供关于源和目标位置的提示。这是通过设置 `cudaMemcpyAttributes` 结构的 `srcLocation` 和 `dstLocation` 字段来实现的。`srcLocation` 和 `dstLocation` 字段都是 `cudaMemLocation` 类型，这是一个包含位置类型和位置 ID 的结构。这与在使用 `cudaMemPrefetchAsync()` 时可以向运行时提供预取提示的 `cudaMemLocation` 结构相同。下面的代码示例说明了如何设置从设备传输到主机特定 NUMA 节点的提示：
 
 清单 6
 设置源和目标位置提示的示例
 #
 
-```cpp
+```c
 // 分配源和目标缓冲区
 std::vector<void *> srcs(batch_size);
 std::vector<void *> dsts(batch_size);
@@ -337,7 +338,7 @@ std::vector<void *> sizes(batch_size);
 // 设备 device_id
 cudaMemLocation srcLoc = {cudaMemLocationTypeDevice, dev_id};
 
-// 主机，NUMA 节点为 numa_id
+// 具有 numa 节点 numa_id 的主机
 cudaMemLocation dstLoc = {cudaMemLocationTypeHostNuma, numa_id};
 
 // 分配 src 和 dst 缓冲区
@@ -368,22 +369,22 @@ cudaMemcpyBatchAsync(&dsts[0], &srcs[0], &sizes[0], batch_size,
     &attrs, &attrsIdxs, 1 /*numAttrs*/, nullptr /*failIdx*/, stream);
 ```
 
-最后要介绍的是用于提示我们希望在传输中使用 SM 还是 CE 的标志。对应的字段是 `cudaMemcpyAttributesflags::flags`，可能的取值为：
+最后要介绍的是用于提示我们是否希望使用 SM 还是 CE 进行传输的标志。对应的字段是 `cudaMemcpyAttributesflags::flags`，可能的值为：
 
 - `cudaMemcpyFlagDefault` – 默认行为
-- `cudaMemcpyFlagPreferOverlapWithCompute` – 此提示表示系统应优先使用 CE 进行传输，以便将传输与计算重叠。此标志在非 Tegra 平台上被忽略。
+- `cudaMemcpyFlagPreferOverlapWithCompute` – 此提示系统应优先使用 CE 进行传输，以便传输与计算重叠。此标志在非 Tegra 平台上被忽略
 
-总而言之，关于 `cudaMemcpyBatchAsync` 的要点如下：
+总之，关于 `cudaMemcpyBatchAsync` 的要点如下：
 
 - `cudaMemcpyBatchAsync` 函数（及其 3D 变体）允许程序员指定一批内存传输，从而分摊传输设置的开销。
-- 除了源和目标指针以及传输大小之外，该函数还可以接受一个或多个内存复制属性，这些属性提供有关被传输内存类型和源指针的相应流排序行为的信息、关于源和目标位置的提示，以及关于是优先将传输与计算重叠（如果可能）还是使用 SM 进行传输的提示。
-- 基于上述信息，运行时可以尝试尽可能优化数据传输。
+- 除了源和目标指针以及传输大小之外，该函数还可以接受一个或多个内存复制属性，这些属性提供有关被传输内存类型和源指针的相应流排序行为的信息、关于源和目标位置的提示，以及关于是否优先让传输与计算重叠（如果可能）或是否使用 SM 进行传输的提示。
+- 基于上述信息，运行时可以尝试最大程度地优化数据传输。
 
 ## 3.1.6. 环境变量
 
-CUDA 提供了多种环境变量（参见 [第 5.2 节](../05-appendices/environment-variables.html#cuda-environment-variables)），这些变量可能会影响执行和性能。如果未明确设置这些变量，CUDA 会为其使用合理的默认值，但根据具体情况（例如，出于调试目的或为了获得更好的性能）可能需要进行特殊处理。
+CUDA 提供了多种环境变量（参见 [第 5.2 节](../05-appendices/environment-variables.html#cuda-environment-variables)），这些变量可能会影响执行和性能。如果未明确设置这些变量，CUDA 会为其使用合理的默认值，但在某些特定情况下（例如，出于调试目的或为了获得更好的性能）可能需要特殊处理。
 
-例如，可能需要增加 `CUDA_DEVICE_MAX_CONNECTIONS` 环境变量的值，以减少来自不同 CUDA 流的独立工作因虚假依赖而被序列化的可能性。当使用相同的基础资源时，可能会引入此类虚假依赖。建议从使用默认值开始，仅在出现性能问题时（例如，跨 CUDA 流的独立工作出现意外的序列化，且无法归因于其他因素，如可用的 SM 资源不足）才探究此环境变量的影响。值得注意的是，在 MPS 情况下，此环境变量具有不同的（更低的）默认值。
+例如，可能需要增加 `CUDA_DEVICE_MAX_CONNECTIONS` 环境变量的值，以减少来自不同 CUDA 流的独立工作因虚假依赖而被序列化的可能性。当使用相同的基础资源时，可能会引入此类虚假依赖。建议从使用默认值开始，仅在出现性能问题时（例如，跨 CUDA 流的独立工作出现意外的序列化，且无法归因于其他因素，如可用的 SM 资源不足）再探究此环境变量的影响。值得注意的是，在 MPS 情况下，此环境变量具有不同的（更低的）默认值。
 
 类似地，对于延迟敏感型应用程序，将 `CUDA_MODULE_LOADING` 环境变量设置为 `EAGER` 可能更可取，以便将所有因模块加载产生的开销移至应用程序初始化阶段，并排除在其关键阶段之外。当前的默认模式是延迟模块加载。在此默认模式下，可以通过在应用程序初始化阶段添加对各种内核的“预热”调用来实现类似于急切模块加载的效果，从而强制模块加载更早发生。
 
