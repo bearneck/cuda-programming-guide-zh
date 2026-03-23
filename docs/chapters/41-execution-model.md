@@ -1,6 +1,6 @@
 # 5.8 CUDA C++ 执行模型
 
-> 本文档为 [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/) 官方文档中文翻译版，基于最新版本翻译。
+> 本文档为 [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/) 官方文档中文翻译版
 >
 > 原文地址：[https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/cuda-cpp-execution-model.html](https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/cuda-cpp-execution-model.html)
 
@@ -10,20 +10,20 @@
 
 # 5.8. CUDA C++ 执行模型
 
-CUDA C++ 旨在为所有设备执行线程提供[并行向前推进 [intro.progress.9]](https://eel.is/c++draft/intro.progress#9)，以促进使用 CUDA C++ 并行化已有的 C++ 应用程序。
+CUDA C++ 旨在为所有设备执行线程提供[并行前向进展 [intro.progress.9]](https://eel.is/c++draft/intro.progress#9)，以促进使用 CUDA C++ 对现有 C++ 应用程序进行并行化。
 
 [intro.progress]
 
-- [intro.progress.7] : 对于一个提供**并发向前推进保证**的执行线程，只要它尚未终止，实现应确保该线程最终会取得进展。[注 5：无论其他执行线程（如果有）是否已经或正在取得进展，此条均适用。最终满足此要求意味着这将在未指定但有限的时间内发生。â 尾注]
-- [intro.progress.9] : 对于一个提供**并行向前推进保证**的执行线程，如果该线程尚未执行任何执行步骤，则实现无需确保其最终会取得进展；一旦该线程执行了一个步骤，它就提供**并发向前推进保证**。[注 6：这并未规定何时启动此执行线程的要求，这通常由创建此执行线程的实体指定。例如，一个提供并发向前推进保证的执行线程，以任意顺序一个接一个地执行一组任务中的任务，就满足了这些任务的并行向前推进要求。â 尾注]
+- [intro.progress.7] : 对于一个提供**并发前向进展保证**的执行线程，只要该线程尚未终止，实现应确保该线程最终会取得进展。[注 5：无论其他执行线程（如果有）是否已经或正在取得进展，此条均适用。最终满足此要求意味着这将在未指定但有限的时间内发生。â 尾注]
+- [intro.progress.9] : 对于一个提供**并行前向进展保证**的执行线程，如果该线程尚未执行任何执行步骤，则实现无需确保该线程最终会取得进展；一旦该线程执行了一个步骤，它就提供**并发前向进展保证**。[注 6：这并未规定何时启动此执行线程的要求，这通常由创建此执行线程的实体指定。例如，一个提供并发前向进展保证的执行线程，以任意顺序一个接一个地执行一组任务中的任务，就满足了这些任务的并行前向进展要求。â 尾注]
 
-CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 国际标准 ISO/IEC 14882 â 编程语言 C++](https://eel.is/c++draft/) 草案中 [[intro.progress]](https://eel.is/c++draft/intro.progress) 部分的修改和扩展。修改的部分被明确标出，其差异以**粗体**显示。所有其他部分为新增内容。
+CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 国际标准 ISO/IEC 14882 â 编程语言 C++](https://eel.is/c++draft/) 草案中 [[intro.progress]](https://eel.is/c++draft/intro.progress) 部分的修改和扩展。修改的部分被明确标出，其差异以**粗体**显示。所有其他部分均为新增内容。
 
 ## 5.8.1. 主机线程
 
-由主机实现创建的用于执行 [main](https://en.cppreference.com/w/cpp/language/main_function)、[std::thread](https://en.cppreference.com/w/cpp/thread/thread) 和 [std::jthread](https://en.cppreference.com/w/cpp/thread/jthread) 的执行线程所提供的向前推进，是主机实现的实现定义行为 [[intro.progress]](https://eel.is/c++draft/intro.progress)。通用主机实现应提供并发向前推进。
+由主机实现创建的用于执行 [main](https://en.cppreference.com/w/cpp/language/main_function)、[std::thread](https://en.cppreference.com/w/cpp/thread/thread) 和 [std::jthread](https://en.cppreference.com/w/cpp/thread/jthread) 的执行线程所提供的前向进展，是主机实现的实现定义行为 [[intro.progress]](https://eel.is/c++draft/intro.progress)。通用主机实现应提供并发前向进展。
 
-如果主机实现提供[并发向前推进 [intro.progress.7]](https://eel.is/c++draft/intro.progress#7)，那么 CUDA C++ 为设备线程提供[并行向前推进 [intro.progress.9]](https://eel.is/c++draft/intro.progress#9)。
+如果主机实现提供[并发前向进展 [intro.progress.7]](https://eel.is/c++draft/intro.progress#7)，则 CUDA C++ 为设备线程提供[并行前向进展 [intro.progress.9]](https://eel.is/c++draft/intro.progress#9)。
 
 ## 5.8.2. 设备线程
 
@@ -42,9 +42,9 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 > [thread.thread.this]
 > )，
 > 调用库 I/O 函数，
-> 通过 volatile 泛左值进行访问，
-> 执行同步操作或原子操作，或者
-> 继续执行一个平凡的无限循环 (
+> 通过 volatile glvalue 执行访问，
+> 执行同步操作或原子操作，或
+> 继续执行平凡无限循环 (
 > [stmt.iter.general]
 > )。
 
@@ -52,18 +52,20 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 
 > 终止，
 > 调用库 I/O 函数，
-> 通过 volatile 泛左值进行访问，除非指定对象具有自动存储期，或者
+> 通过 volatile glvalue 执行访问，除非指定对象具有自动存储期，或
 > 执行同步操作或原子读操作，除非指定对象具有自动存储期。
-> [注：设备线程相对于主机线程当前存在的一些限制是我们已知的实现缺陷，我们可能会随着时间的推移进行修复。
-> 例如，设备线程最终仅对自动存储期对象执行 volatile 或原子操作会导致未定义行为。
-> 然而，设备线程相对于主机线程的其他限制是经过深思熟虑的选择。它们使得性能优化成为可能，如果设备线程严格遵循 C++ 标准，这些优化将无法实现。
-> 例如，为最终仅执行原子写或栅栏操作的程序提供向前进度保证，会降低整体性能，而实际收益甚微。 - 尾注]
+> [注：设备线程相对于主机线程的某些当前限制是我们已知的实现缺陷，我们可能会随着时间的推移进行修复。
+> 例如，设备线程最终仅对自动存储期对象执行 volatile 或原子操作所导致的未定义行为。
+> 然而，设备线程相对于主机线程的其他限制是经过深思熟虑的选择。它们实现了性能优化，
+> 如果设备线程严格遵循 C++ 标准，这些优化将无法实现。
+> 例如，为最终仅执行原子写或栅栏操作的程序提供向前进展保证，
+> 会降低整体性能，而实际收益甚微。 - 尾注]
 
-由于对 [intro.progress.1] 的修改，主机和设备线程之间向前进度保证差异的示例。
+由于对 [intro.progress.1] 的修改，主机线程与设备线程之间向前进展保证差异的示例。
 
 以下示例分别使用 "host.threads.<id>" 和 "device.threads.<id>" 来指代上述主机和设备线程实现假设的列举子条款。
 
-```cpp
+```cuda
 1// 示例：Execution.Model.Device.0
 2// 结果：网格最终根据 device.threads.4 终止，因为原子对象不具有自动存储期。
 3__global__ void ex0(cuda::atomic_ref<int, cuda::thread_scope_device> atom) {
@@ -75,7 +77,7 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 9}
 ```
 
-```cpp
+```cuda
 1// 示例：Execution.Model.Device.1
 2// 允许的结果：没有线程取得进展，因为设备线程不支持 host.threads.2。
 3__global__ void ex1() {
@@ -83,27 +85,27 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 5}
 ```
 
-```cpp
+```cuda
 1// 示例：Execution.Model.Device.2
 2// 允许的结果：没有线程取得进展，因为设备线程不支持 host.threads.4
-3// （对于具有自动存储期的对象，参见 device.threads.3 中的例外情况）。
+3//（对于具有自动存储期的对象，参见 device.threads.3 中的例外情况）。
 4__global__ void ex2() {
 5    volatile bool True = true;
 6    while(True);
 7}
 ```
 
-```cpp
+```cuda
 1// 示例：Execution.Model.Device.3
 2// 允许的结果：没有线程取得进展，因为设备线程不支持 host.threads.5
-3// （对于具有自动存储期的对象，参见 device.threads.4 中的例外情况）。
+3//（对于具有自动存储期的对象，参见 device.threads.4 中的例外情况）。
 4__global__ void ex3() {
 5    cuda::atomic<bool, cuda::thread_scope_thread> True = true;
 6    while(True.load());
 7}
 ```
 
-```cpp
+```cuda
 1// Example: Execution.Model.Device.4
 2// Allowed outcome: No thread makes progress because device threads don't support host.thread.6.
 3__global void ex4() {
@@ -127,7 +129,7 @@ CUDA query functions (e.g. [cudaStreamQuery](https://docs.nvidia.com/cuda/cuda-r
 
 Examples of CUDA API forward progress guarantees.
 
-```cpp
+```cuda
  1// Example: Execution.Model.API.1
  2// Outcome: if no other device threads (e.g., from other processes) are making progress,
  3// this program terminates and returns cudaSuccess.
@@ -144,7 +146,7 @@ Examples of CUDA API forward progress guarantees.
 14}
 ```
 
-```cpp
+```cuda
  1// Example: Execution.Model.API.2
  2// Allowed outcome: eventually, no thread makes progress.
  3// Rationale: the `cudaDeviceSynchronize` API below is only called if a device thread eventually makes progress and sets the flag.
@@ -160,7 +162,7 @@ Examples of CUDA API forward progress guarantees.
 13}
 ```
 
-```cpp
+```cuda
  1// Example: Execution.Model.API.3
  2// Allowed outcome: eventually, no thread makes progress.
  3// Rationale: same as Example.Model.API.2, with the addition that a single CUDA query API call does not guarantee
@@ -176,7 +178,7 @@ Examples of CUDA API forward progress guarantees.
 13}
 ```
 
-```cpp
+```cuda
  1// Example: Execution.Model.API.4
  2// Outcome: terminates.
  3// Rationale: same as Execution.Model.API.3, but this example repeatedly calls
@@ -209,7 +211,7 @@ A device thread shall not start until all its dependencies have completed.
 
 Examples of CUDA API forward progress guarantees due to dependencies
 
-```cpp
+```cuda
  1// Example: Execution.Model.Stream.0
  2// Allowed outcome: eventually, no thread makes progress.
  3// Rationale: while CUDA guarantees that one device thread makes progress, since there
@@ -231,7 +233,7 @@ Examples of CUDA API forward progress guarantees due to dependencies
 19}
 ```
 
-```cpp
+```cuda
  1// Example: Execution.Model.Stream.1
  2// Outcome: terminates.
  3// Rationale: same as Execution.Model.Stream.0, but this example has a stream dependency
