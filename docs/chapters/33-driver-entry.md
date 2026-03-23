@@ -38,7 +38,7 @@
 
 上述头文件本身并不定义实际的函数指针；它们定义了函数指针的类型定义。例如，`cudaTypedefs.h` 为驱动程序 API `cuMemAlloc` 定义了以下类型定义：
 
-```cuda
+```cpp
 typedef CUresult (CUDAAPI *PFN_cuMemAlloc_v3020)(CUdeviceptr_v2 *dptr, size_t bytesize);
 typedef CUresult (CUDAAPI *PFN_cuMemAlloc_v2000)(CUdeviceptr_v1 *dptr, unsigned int bytesize);
 ```
@@ -47,14 +47,14 @@ CUDA 驱动程序符号有一个基于版本的命名方案，在其名称中带
 
 这些 `typedefs` 可用于在代码中更轻松地定义适当类型的函数指针：
 
-```cuda
+```cpp
 PFN_cuMemAlloc_v3020 pfn_cuMemAlloc_v2;
 PFN_cuMemAlloc_v2000 pfn_cuMemAlloc_v1;
 ```
 
 如果用户对 API 的特定版本感兴趣，上述方法是可取的。此外，头文件为已安装的 CUDA 工具包发布时可用的所有驱动程序符号的最新版本预定义了宏；这些类型定义没有 `_v*` 后缀。对于 CUDA 11.3 工具包，`cuMemAlloc_v2` 是最新版本，因此我们也可以如下定义其函数指针：
 
-```cuda
+```cpp
 PFN_cuMemAlloc pfn_cuMemAlloc;
 ```
 
@@ -66,7 +66,7 @@ Using the Driver Entry Point Access APIs and the appropriate typedef, we can get
 
 The driver API requires CUDA version as an argument to get the ABI compatible version for the requested driver symbol. CUDA Driver APIs have a per-function ABI denoted with a `_v*` extension. For example, consider the versions of `cuStreamBeginCapture` and their corresponding `typedefs` from `cudaTypedefs.h`:
 
-```cuda
+```cpp
 // cuda.h
 CUresult CUDAAPI cuStreamBeginCapture(CUstream hStream);
 CUresult CUDAAPI cuStreamBeginCapture_v2(CUstream hStream, CUstreamCaptureMode mode);
@@ -78,7 +78,7 @@ typedef CUresult (CUDAAPI *PFN_cuStreamBeginCapture_v10010)(CUstream hStream, CU
 
 From the above `typedefs` in the code snippet, version suffixes `_v10000` and `_v10010` indicate that the above APIs were introduced in CUDA 10.0 and CUDA 10.1 respectively.
 
-```cuda
+```cpp
 #include <cudaTypedefs.h>
 
 // Declare the entry points for cuStreamBeginCapture
@@ -95,7 +95,7 @@ Referring to the code snippet above, to retrieve the address to the `_v1` versio
 
 To retrieve the latest version of a driver API for a given CUDA Toolkit, we can also specify CUDA_VERSION as the `version` argument and use the unversioned typedef to define the function pointer. Since `_v2` is the latest version of the driver API `cuStreamBeginCapture` in CUDA 11.3, the below code snippet shows a different method to retrieve it.
 
-```cuda
+```cpp
 // Assuming we are using CUDA 11.3 Toolkit
 
 #include <cudaTypedefs.h>
@@ -113,7 +113,7 @@ cuGetProcAddress("cuStreamBeginCapture", &pfn_cuStreamBeginCapture_latest, CUDA_
 
 运行时 API `cudaGetDriverEntryPoint` 使用 CUDA 运行时版本来获取所请求驱动程序符号的 ABI 兼容版本。在下面的代码片段中，所需的最低 CUDA 运行时版本将是 CUDA 11.2，因为 `cuMemAllocAsync` 是在那时引入的。
 
-```cuda
+```cpp
 #include <cudaTypedefs.h>
 
 // 声明入口点
@@ -143,7 +143,7 @@ if(driverStatus == cudaDriverEntryPointSuccess && pfn_cuMemAllocAsync) {
 
 始终建议安装最新的 CUDA 工具包以访问新的 CUDA 驱动程序功能，但如果由于某些原因，用户不想更新或无法访问最新的工具包，则可以使用此 API 仅通过更新的 CUDA 驱动程序来访问新的 CUDA 功能。为了讨论，假设用户使用的是 CUDA 11.3，并希望使用 CUDA 12.0 驱动程序中提供的新驱动程序 API `cuFoo`。下面的代码片段说明了这个用例：
 
-```cuda
+```cpp
 int main()
 {
     // 假设我们安装了 CUDA 12.0 驱动程序。
@@ -180,7 +180,7 @@ int main()
 
 `cuDeviceGetUuid` 在 CUDA 9.2 中引入。该 API 在 CUDA 11.4 中引入了更新的修订版（`cuDeviceGetUuid_v2`）。为了保持次要版本兼容性，在 CUDA 12.0 之前，`cuDeviceGetUuid` 在 cuda.h 中不会被版本提升为 `cuDeviceGetUuid_v2`。这意味着通过 `cuGetProcAddress` 获取其函数指针来调用它，可能会产生不同的行为。直接使用 API 的示例：
 
-```cuda
+```cpp
 #include <cuda.h>
 
 CUuuid uuid;
@@ -195,7 +195,7 @@ status = cuDeviceGetUuid(&uuid, dev) // 获取设备 0 的 uuid
 
 在此示例中，假设用户使用 CUDA 11.4 进行编译。请注意，这将执行 `cuDeviceGetUuid` 的行为，而不是 _v2 版本。现在是一个使用 `cuGetProcAddress` 的示例：
 
-```cuda
+```cpp
 #include <cudaTypedefs.h>
 
 CUuuid uuid;
@@ -219,7 +219,7 @@ if(CUDA_SUCCESS == status && pfn_cuDeviceGetUuid) {
 
 让我们以相同的问题为例，做一个小调整。上一个示例使用了编译时常量 `CUDA_VERSION` 来确定获取哪个函数指针。如果用户使用 `cuDriverGetVersion` 或 `cudaDriverGetVersion` 动态查询驱动程序版本，然后传递给 `cuGetProcAddress`，则会出现更复杂的情况。示例：
 
-```cuda
+```cpp
 #include <cudaTypedefs.h>
 
 CUuuid uuid;
@@ -244,13 +244,13 @@ if(CUDA_SUCCESS == status && pfn_cuDeviceGetUuid) {
 在此示例中，假设用户使用 CUDA 11.3 进行编译。用户将使用获取 `cuDeviceGetUuid`（而非 _v2 版本）的已知行为来调试、测试和部署此应用程序。由于 CUDA 保证了次要版本之间的 ABI 兼容性，预计同一应用程序在驱动程序升级到 CUDA 11.4 后（无需更新工具包和运行时）无需重新编译即可运行。但这将导致未定义行为，因为 `PFN_cuDeviceGetUuid` 的 typedef 仍将是原始版本的签名，但由于 `cudaVersion` 现在将是 11040（CUDA 11.4），`cuGetProcAddress` 将返回指向 _v2 版本的函数指针，这意味着调用它可能会产生未定义行为。
 请注意，在这种情况下，原始（非 _v2 版本）的 typedef 看起来像：
 
-```cuda
+```cpp
 typedef CUresult (CUDAAPI *PFN_cuDeviceGetUuid_v9020)(CUuuid *uuid, CUdevice_v1 dev);
 ```
 
 但是 _v2 版本的 typedef 看起来像：
 
-```cuda
+```cpp
 typedef CUresult (CUDAAPI *PFN_cuDeviceGetUuid_v11040)(CUuuid *uuid, CUdevice_v1 dev);
 ```
 
@@ -260,7 +260,7 @@ typedef CUresult (CUDAAPI *PFN_cuDeviceGetUuid_v11040)(CUuuid *uuid, CUdevice_v1
 
 上面是一个具体的例子。现在，让我们用一个理论上的例子来说明，该例子在跨驱动程序版本时仍然存在兼容性问题。例如：
 
-```cuda
+```cpp
 CUresult cuFoo(int bar); // 在 CUDA 11.4 中引入
 CUresult cuFoo_v2(int bar); // 在 CUDA 11.5 中引入
 CUresult cuFoo_v3(int bar, void* jazz); // 在 CUDA 11.6 中引入
@@ -272,7 +272,7 @@ typedef CUresult (CUDAAPI *PFN_cuFoo_v11060)(int bar, void* jazz);
 
 请注意，自 CUDA 11.4 中最初创建以来，该 API 已被修改了两次，并且 CUDA 11.6 中的最新版本也修改了函数的 API/ABI 接口。针对 CUDA 11.5 编译的用户代码中的用法是：
 
-```cuda
+```cpp
 #include <cuda.h>
 #include <cudaTypedefs.h>
 
@@ -305,7 +305,7 @@ else {
 
 我们将从使用类似于上述的运行时 API 开始。
 
-```cuda
+```cpp
 #include <cuda.h>
 #include <cudaTypedefs.h>
 #include <cuda_runtime.h>
@@ -330,7 +330,7 @@ if(cudaSuccess == error && pfn_cuDeviceGetUuidRuntime) {
 | V11.3 | v1 | v1x |
 | V11.4 | v1 | v2 |
 
-```cuda
+```cpp
 V11.3 => 11.3 CUDA Runtime and Toolkit (includes header files cuda.h and cudaTypedefs.h)
 V11.4 => 11.4 CUDA Runtime and Toolkit (includes header files cuda.h and cudaTypedefs.h)
 v1 => cuDeviceGetUuid
@@ -348,7 +348,7 @@ x => Implies the typedef function pointer won't match the returned
 
 当我们考虑应用程序编译所用的 CUDA 版本、CUDA 运行时版本以及应用程序动态链接的 CUDA 驱动程序版本的不同组合时，会出现更多复杂情况。
 
-```cuda
+```cpp
 #include <cuda.h>
 #include <cudaTypedefs.h>
 #include <cuda_runtime.h>
@@ -391,7 +391,7 @@ if(CUDA_SUCCESS == status && pfn_cuDeviceGetUuidDriverDriverVer) {
 | pfn_cuDeviceGetUuidRuntime | t1/v1 | t1/v1 | t1/v1 | t1/v2 | N/A | N/A | t2/v1 | t2/v2 |
 | pfn_cuDeviceGetUuidDriverDriverVer | t1/v1 | t1/v2 | t1/v1 | t1/v2 | N/A | N/A | t2/v1 | t2/v2 |
 
-```cuda
+```cpp
 tX -> 编译时使用的类型定义版本
 vX -> 运行时返回/使用的版本
 ```
@@ -410,7 +410,7 @@ vX -> 运行时返回/使用的版本
 
 例如，假设以下代码是针对 CUDA 11.3 工具包编译的，但安装了 CUDA 11.4 驱动程序：
 
-```cuda
+```cpp
 PFN_cuCtxCreate cuUnknown;
 CUdriverProcAddressQueryResult driverStatus;
 
@@ -427,7 +427,7 @@ if(CUDA_SUCCESS == status && cuUnknown) {
 cuGetProcAddress 有两种类型的错误。它们是 (1) API/使用错误 和 (2) 无法找到请求的驱动程序 API。第一种错误类型将通过 CUresult 返回值从 API 返回错误代码。例如，将 NULL 作为 `pfn` 变量传递或传递无效的 `flags`。
 第二种错误类型编码在 `CUdriverProcAddressQueryResult *symbolStatus` 中，可用于帮助区分驱动程序无法找到请求符号的潜在问题。请看以下示例：
 
-```cuda
+```cpp
 // cuDeviceGetExecAffinitySupport 是在 CUDA 11.4 版本中引入的
 #include <cuda.h>
 CUdriverProcAddressQueryResult driverStatus;

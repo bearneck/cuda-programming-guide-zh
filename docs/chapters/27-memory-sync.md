@@ -43,7 +43,7 @@
 
 拥有逻辑域简化了应用程序的组合。在堆栈较低级别（例如来自 NCCL）的单个内核启动，可以选择语义逻辑域，而无需关心周围的应用程序架构。更高级别可以使用映射来引导逻辑域。如果未设置逻辑域，其默认值为默认域，默认映射是将默认域映射到 0，将远程域映射到 1（在具有超过 1 个域的 GPU 上）。特定的库可能会在 CUDA 12.0 及更高版本中使用远程域标记启动；例如，NCCL 2.16 将这样做。总之，这为常见应用程序提供了一个开箱即用的有益使用模式，无需在其他组件、框架或应用程序级别进行代码更改。另一种使用模式，例如在使用 NVSHMEM 的应用程序中或没有明确区分内核类型的情况下，可能是对并行流进行分区。流 A 可以将两个逻辑域都映射到物理域 0，流 B 映射到 1，依此类推。
 
-```cuda
+```cpp
 // 使用远程逻辑域启动内核的示例
 cudaLaunchAttribute domainAttr;
 domainAttr.id = cudaLaunchAttrMemSyncDomain;
@@ -55,7 +55,7 @@ config.numAttrs = 1;
 cudaLaunchKernelEx(&config, myKernel, kernelArg1, kernelArg2...);
 ```
 
-```cuda
+```cpp
 // 为流设置映射的示例
 // (此映射是计算能力 9.0 (Hopper) 或更高版本上流的默认映射（如果未显式设置），此处提供用于说明)
 cudaLaunchAttributeValue mapAttr;
@@ -64,7 +64,7 @@ mapAttr.memSyncDomainMap.remote = 1;
 cudaStreamSetAttribute(stream, cudaLaunchAttributeMemSyncDomainMap, &mapAttr);
 ```
 
-```cuda
+```cpp
 // 将不同流映射到不同物理域的示例，忽略逻辑域设置
 cudaLaunchAttributeValue mapAttr;
 mapAttr.memSyncDomainMap.default_ = 0;

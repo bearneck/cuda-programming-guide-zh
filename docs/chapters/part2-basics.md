@@ -1,12 +1,12 @@
 # 第二部分：CUDA GPU 编程
 
-> 本文档为 [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/) 官方文档中文翻译版，基于最新版本翻译。
+> 本文档为 [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/) 官方文档中文翻译版
 >
 > 原文地址：[https://docs.nvidia.com/cuda/cuda-programming-guide/part2.html](https://docs.nvidia.com/cuda/cuda-programming-guide/part2.html)
 
 ---
 
-此页面是否有帮助？
+本页面是否有帮助？
 
 # 2. 使用 CUDA 对 GPU 进行编程
 

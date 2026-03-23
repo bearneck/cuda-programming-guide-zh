@@ -41,7 +41,7 @@ Linux HMM 需要 Linux 内核版本 6.1.24+、6.2.11+ 或 6.3+，计算能力 7.
 
 本节展示一些高级用例，使用一个简单的内核，该内核将输入字符数组的前 8 个字符打印到标准输出流：
 
-```cuda
+```cpp
 __global__ void kernel(const char* type, const char* data) {
   static const int n_char = 8;
   printf("%s - first %d characters: '", type, n_char);
@@ -54,7 +54,7 @@ __global__ void kernel(const char* type, const char* data) {
 
  Malloc
 
-```cuda
+```cpp
 void test_malloc() {
   const char test_string[] = "Hello World";
   char* heap_data = (char*)malloc(sizeof(test_string));
@@ -68,7 +68,7 @@ void test_malloc() {
 
  Managed
 
-```cuda
+```cpp
 void test_managed() {
   const char test_string[] = "Hello World";
   char* data;
@@ -83,7 +83,7 @@ void test_managed() {
 
  Stack variable
 
-```cuda
+```cpp
 void test_stack() {
   const char test_string[] = "Hello World";
   kernel<<<1, 1>>>("stack", test_string);
@@ -94,7 +94,7 @@ void test_stack() {
 
  File-scope static variable
 
-```cuda
+```cpp
 void test_static() {
   static const char test_string[] = "Hello World";
   kernel<<<1, 1>>>("static", test_string);
@@ -105,7 +105,7 @@ void test_static() {
 
  Global-scope variable
 
-```cuda
+```cpp
 const char global_string[] = "Hello World";
 
 void test_global() {
@@ -117,7 +117,7 @@ void test_global() {
 
  Global-scope extern variable
 
-```cuda
+```cpp
 // declared in separate file, see below
 extern char* ext_data;
 
@@ -128,7 +128,7 @@ void test_extern() {
 }
 ```
 
-```cuda
+```cpp
 /** This may be a non-CUDA file */
 char* ext_data;
 static const char global_string[] = "Hello World";
@@ -147,7 +147,7 @@ Note that for the extern variable, it could be declared and its memory owned and
 
 Also note that stack variables as well as file-scope and global-scope variables can only be accessed through a pointer by the GPU. In this specific example, this is convenient because the character array is already declared as a pointer: `const char*`. However, consider the following example with a global-scope integer:
 
-```cuda
+```cpp
 // this variable is declared at global scope
 int global_variable;
 
@@ -176,7 +176,7 @@ int main() {
 
 这里，我们展示了上一节中初始示例的一个修改版本，它使用文件支持的内存，以便从 GPU 打印一个直接从输入文件读取的字符串。在下面的示例中，内存由物理文件支持，但该示例同样适用于内存支持的文件。
 
-```cuda
+```cpp
 __global__ void kernel(const char* type, const char* data) {
   static const int n_char = 8;
   printf("%s - first %d characters: '", type, n_char);
@@ -185,7 +185,7 @@ __global__ void kernel(const char* type, const char* data) {
 }
 ```
 
-```cuda
+```cpp
 void test_file_backed() {
   int fd = open(INPUT_FILE_NAME, O_RDONLY);
   ASSERT(fd >= 0, "Invalid file handle");
@@ -287,7 +287,7 @@ CUDA IPC（参见[进程间通信](inter-process-communication.html#interprocess
 
  系统分配器
 
-```cuda
+```cpp
 __global__ void write(int *ret, int a, int b) {
   ret[threadIdx.x] = a + b + threadIdx.x;
 }
@@ -315,7 +315,7 @@ void test_malloc() {
 
  托管内存
 
-```cuda
+```cpp
 __global__ void write(int *ret, int a, int b) {
   ret[threadIdx.x] = a + b + threadIdx.x;
 }
@@ -358,7 +358,7 @@ CUDA 统一内存支持主机和设备线程可用的所有原子操作，使所
 
 在软件一致性系统上，不支持设备对文件支持的主机内存进行原子访问。以下示例代码在硬件一致性系统上有效，但在其他系统上表现出未定义行为：
 
-```cuda
+```cpp
 #include <cuda/atomic>
 
 #include <cstdio>
@@ -477,7 +477,7 @@ GPU 驻留内存的页面大小可能在未来的 CUDA 版本中演进。
 
  系统分配器
 
-```cuda
+```cpp
   size_t data_size = sizeof(int);
   int* data = (int*)malloc(data_size);
   // ensure that data stays local to the host and avoid faults
@@ -499,7 +499,7 @@ GPU 驻留内存的页面大小可能在未来的 CUDA 版本中演进。
 
  托管内存
 
-```cuda
+```cpp
   int* data;
   size_t data_size = sizeof(int);
   cudaMallocManaged(&data, data_size);
@@ -532,7 +532,7 @@ GPU 驻留内存的页面大小可能在未来的 CUDA 版本中演进。
 
  1. 显式复制
 
-```cuda
+```cpp
 void exchange_explicit_copy(cudaStream_t stream) {
   int* data, *host_data;
   size_t n_bytes = sizeof(int) * 16;
@@ -556,7 +556,7 @@ void exchange_explicit_copy(cudaStream_t stream) {
 
  2. 设备直接写入
 
-```cuda
+```cpp
 void exchange_device_direct_write(cudaStream_t stream) {
   int* data;
   size_t n_bytes = sizeof(int) * 16;
@@ -577,7 +577,7 @@ void exchange_device_direct_write(cudaStream_t stream) {
 
  3. 主机直接读取
 
-```cuda
+```cpp
 void exchange_host_direct_read(cudaStream_t stream) {
   int* data;
   size_t n_bytes = sizeof(int) * 16;
@@ -638,7 +638,7 @@ void exchange_host_direct_read(cudaStream_t stream) {
 
 例如，由于 GPU 页面错误处理能力取消了对同时访问的所有限制，以下代码在计算能力 6.x 的设备上成功运行，但在 6.x 之前的架构和 Windows 平台上会失败，因为当 CPU 访问 `y` 时，GPU 程序内核仍在运行：
 
-```cuda
+```cpp
 __device__ __managed__ int x, y=2;
 __global__  void  kernel() {
     x = 10;
@@ -654,7 +654,7 @@ int main() {
 
 在访问 `y` 之前，程序必须与 GPU 显式同步（无论 GPU 内核是否实际访问 `y`（或任何托管数据））：
 
-```cuda
+```cpp
 __device__ __managed__ int x, y=2;
 __global__  void  kernel() {
     x = 10;
@@ -686,7 +686,7 @@ It is legal for the CPU to access managed data from within a stream callback, pr
 
 Note how the last point allows for races between GPU kernels, as is currently the case for non-managed GPU memory. In the perspective of the GPU, managed memory functions are identical to non-managed memory. The following code example illustrates these points:
 
-```cuda
+```cpp
 int main() {
     cudaStream_t stream1, stream2;
     cudaStreamCreate(&stream1);
@@ -714,7 +714,7 @@ int main() {
 
 统一内存建立在流无关模型之上，允许 CUDA 程序显式地将托管分配与 CUDA 流关联起来。通过这种方式，程序员可以根据内核是否在指定流中启动，来指明其对数据的使用。这使得基于程序特定数据访问模式的并发成为可能。控制此行为的函数是：
 
-```cuda
+```cpp
 cudaError_t cudaStreamAttachMemAsync(cudaStream_t stream,
                                      void *ptr,
                                      size_t length=0,
@@ -729,7 +729,7 @@ cudaError_t cudaStreamAttachMemAsync(cudaStream_t stream,
 
 以下示例展示了如何显式地将 `y` 与主机可访问性关联，从而允许 CPU 随时访问。（注意内核调用后没有 `cudaDeviceSynchronize()`。）现在，运行内核的 GPU 对 `y` 的访问将产生未定义的结果。
 
-```cuda
+```cpp
 __device__ __managed__ int x, y=2;
 __global__  void  kernel() {
     x = 10;
@@ -750,7 +750,7 @@ int main() {
 
 `cudaStreamAttachMemAsync()` 的主要用途是使用 CPU 线程实现独立的任务并行性。通常，在此类程序中，CPU 线程会为其生成的所有工作创建自己的流，因为使用 CUDA 的 NULL 流会导致线程之间的依赖关系。托管数据对任何 GPU 流的默认全局可见性，使得在多线程程序中很难避免 CPU 线程之间的交互。因此，使用 `cudaStreamAttachMemAsync()` 函数将线程的托管分配与该线程自己的流关联起来，并且这种关联通常在线程的生命周期内不会改变。这样的程序只需添加一个对 `cudaStreamAttachMemAsync()` 的调用，即可为其数据访问使用统一内存：
 
-```cuda
+```cpp
 // This function performs some task, in its own , in its own private stream and can be run in parallel
 void run_task(int *in, int *out, int length) {
     // Create a stream for us to use.
@@ -814,7 +814,7 @@ If `cudaMemcpyHostTo*` is specified and the source data is unified memory, then 
 
 `cudaMemPrefetchAsync` API 是一个异步的流序 API，可以将数据迁移到更靠近指定处理器的位置。数据在预取期间可以被访问。迁移操作直到流中所有先前的操作完成后才开始，并在流中任何后续操作开始前完成。
 
-```cuda
+```cpp
 cudaError_t cudaMemPrefetchAsync(const void *devPtr,
                                  size_t count,
                                  struct cudaMemLocation location,
@@ -827,7 +827,7 @@ cudaError_t cudaMemPrefetchAsync(const void *devPtr,
 
 系统分配器
 
-```cuda
+```cpp
 void test_prefetch_sam(const cudaStream_t& s) {
   // initialize data on CPU
   char *data = (char*)malloc(dataSizeBytes);
@@ -856,7 +856,7 @@ void test_prefetch_sam(const cudaStream_t& s) {
 
 托管内存
 
-```cuda
+```cpp
 void test_prefetch_managed(const cudaStream_t& s) {
   // initialize data on CPU
   char *data;
@@ -888,7 +888,7 @@ void test_prefetch_managed(const cudaStream_t& s) {
 
 当多个处理器同时访问相同数据时，可以使用 `cudaMemAdvise` 来提示 `[devPtr, devPtr + count)` 处的数据将如何被访问：
 
-```cuda
+```cpp
 cudaError_t cudaMemAdvise(const void *devPtr,
                           size_t count,
                           enum cudaMemoryAdvise advice,
@@ -897,7 +897,7 @@ cudaError_t cudaMemAdvise(const void *devPtr,
 
 该示例展示了如何使用 `cudaMemAdvise`：
 
-```cuda
+```cpp
   init_data(data, dataSizeBytes);                                     
   cudaMemLocation location = {.type = cudaMemLocationTypeDevice, .id = myGpuId};
 
@@ -944,7 +944,7 @@ void test_advise_managed(cudaStream_t stream) {
 
  系统分配器
 
-```cuda
+```cpp
 void test_advise_sam(cudaStream_t stream) {
   char *dataPtr;
   size_t dataSize = 64 * threadsPerBlock;  // 16 KiB
@@ -987,7 +987,7 @@ void test_advise_sam(cudaStream_t stream) {
 
  托管内存
 
-```cuda
+```cpp
 void test_advise_managed(cudaStream_t stream) {
   char *dataPtr;
   size_t dataSize = 64 * threadsPerBlock;  // 16 KiB
@@ -1032,7 +1032,7 @@ void test_advise_managed(cudaStream_t stream) {
 
 `cudaMemDiscardBatchAsync` API 允许应用程序通知 CUDA 运行时，指定内存范围的内容不再有用。统一内存驱动程序会执行自动内存传输，这是由于基于缺页的迁移或内存逐出，以支持设备内存超额订阅。这些自动内存传输有时可能是冗余的，这会严重降低性能。将地址范围标记为“丢弃”将通知统一内存驱动程序，应用程序已使用完该范围内的内容，并且无需在预取或页面逐出时迁移此数据以为其他分配腾出空间。在没有后续写入访问或预取的情况下读取已丢弃的页面将产生不确定的值。而丢弃操作之后的任何新写入都保证能被后续的读取访问看到。对正在被丢弃的地址范围进行并发访问或预取将导致未定义行为。
 
-```cuda
+```cpp
 cudaError_t cudaMemDiscardBatchAsync(void **dptrs,
                                     size_t *sizes,
                                     size_t count,
@@ -1044,7 +1044,7 @@ cudaError_t cudaMemDiscardBatchAsync(void **dptrs,
 
 `cudaMemDiscardAndPrefetchBatchAsync` API 结合了丢弃和预取操作。调用 `cudaMemDiscardAndPrefetchBatchAsync` 在语义上等同于先调用 `cudaMemDiscardBatchAsync` 再调用 `cudaMemPrefetchBatchAsync`，但更优化。这在应用程序需要内存位于目标位置但不需要内存内容时非常有用。
 
-```cuda
+```cpp
 cudaError_t cudaMemDiscardAndPrefetchBatchAsync(void **dptrs,
                                                size_t *sizes,
                                                size_t count,
@@ -1067,7 +1067,7 @@ cudaError_t cudaMemDiscardAndPrefetchBatchAsync(void **dptrs,
 
 程序可以通过以下 API 查询在 CUDA 托管内存上通过 `cudaMemAdvise` 或 `cudaMemPrefetchAsync` 分配的内存范围属性：
 
-```cuda
+```cpp
 cudaMemRangeGetAttribute(void *data,
                          size_t dataSize,
                          enum cudaMemRangeAttribute attribute,

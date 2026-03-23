@@ -63,7 +63,7 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 
 以下示例分别使用 "host.threads.<id>" 和 "device.threads.<id>" 来指代上述主机和设备线程实现假设的列举子条款。
 
-```cuda
+```cpp
 1// 示例：Execution.Model.Device.0
 2// 结果：网格最终根据 device.threads.4 终止，因为原子对象不具有自动存储期。
 3__global__ void ex0(cuda::atomic_ref<int, cuda::thread_scope_device> atom) {
@@ -75,7 +75,7 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 9}
 ```
 
-```cuda
+```cpp
 1// 示例：Execution.Model.Device.1
 2// 允许的结果：没有线程取得进展，因为设备线程不支持 host.threads.2。
 3__global__ void ex1() {
@@ -83,7 +83,7 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 5}
 ```
 
-```cuda
+```cpp
 1// 示例：Execution.Model.Device.2
 2// 允许的结果：没有线程取得进展，因为设备线程不支持 host.threads.4
 3// （对于具有自动存储期的对象，参见 device.threads.3 中的例外情况）。
@@ -93,7 +93,7 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 7}
 ```
 
-```cuda
+```cpp
 1// 示例：Execution.Model.Device.3
 2// 允许的结果：没有线程取得进展，因为设备线程不支持 host.threads.5
 3// （对于具有自动存储期的对象，参见 device.threads.4 中的例外情况）。
@@ -103,7 +103,7 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 7}
 ```
 
-```cuda
+```cpp
 1// Example: Execution.Model.Device.4
 2// Allowed outcome: No thread makes progress because device threads don't support host.thread.6.
 3__global void ex4() {
@@ -127,7 +127,7 @@ CUDA query functions (e.g. [cudaStreamQuery](https://docs.nvidia.com/cuda/cuda-r
 
 Examples of CUDA API forward progress guarantees.
 
-```cuda
+```cpp
  1// Example: Execution.Model.API.1
  2// Outcome: if no other device threads (e.g., from other processes) are making progress,
  3// this program terminates and returns cudaSuccess.
@@ -144,7 +144,7 @@ Examples of CUDA API forward progress guarantees.
 14}
 ```
 
-```cuda
+```cpp
  1// Example: Execution.Model.API.2
  2// Allowed outcome: eventually, no thread makes progress.
  3// Rationale: the `cudaDeviceSynchronize` API below is only called if a device thread eventually makes progress and sets the flag.
@@ -160,7 +160,7 @@ Examples of CUDA API forward progress guarantees.
 13}
 ```
 
-```cuda
+```cpp
  1// Example: Execution.Model.API.3
  2// Allowed outcome: eventually, no thread makes progress.
  3// Rationale: same as Example.Model.API.2, with the addition that a single CUDA query API call does not guarantee
@@ -176,7 +176,7 @@ Examples of CUDA API forward progress guarantees.
 13}
 ```
 
-```cuda
+```cpp
  1// Example: Execution.Model.API.4
  2// Outcome: terminates.
  3// Rationale: same as Execution.Model.API.3, but this example repeatedly calls
@@ -209,7 +209,7 @@ A device thread shall not start until all its dependencies have completed.
 
 Examples of CUDA API forward progress guarantees due to dependencies
 
-```cuda
+```cpp
  1// Example: Execution.Model.Stream.0
  2// Allowed outcome: eventually, no thread makes progress.
  3// Rationale: while CUDA guarantees that one device thread makes progress, since there
@@ -231,7 +231,7 @@ Examples of CUDA API forward progress guarantees due to dependencies
 19}
 ```
 
-```cuda
+```cpp
  1// Example: Execution.Model.Stream.1
  2// Outcome: terminates.
  3// Rationale: same as Execution.Model.Stream.0, but this example has a stream dependency

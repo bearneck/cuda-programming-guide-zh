@@ -22,13 +22,13 @@
 
 或者，可以使用随 [NVIDIA 驱动程序](https://www.nvidia.com/en-us/drivers/) 提供的 [nvidia-smi](https://docs.nvidia.com/deploy/nvidia-smi/index.html) 工具来获取 GPU 的计算能力。例如，以下命令将输出系统中可用的 GPU 名称和计算能力：
 
-```cuda
+```cpp
 nvidia-smi --query-gpu=name,compute_cap
 ```
 
 在运行时，可以使用 CUDA 运行时 API [cudaDeviceGetAttribute()](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__DEVICE.html#group__CUDART__DEVICE_1gb22e8256592b836df9a9cc36c9db7151)、CUDA 驱动程序 API [cuDeviceGetAttribute()](https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html#group__CUDA__DEVICE_1g9c3e1414f0ad901d3278a4d6645fc266) 或 NVML API [nvmlDeviceGetCudaComputeCapability()](https://docs.nvidia.com/deploy/nvml-api/group__nvmlDeviceQueries.html#group__nvmlDeviceQueries_1g1f803a2fb4b7dfc0a8183b46b46ab03a) 来获取计算能力：
 
-```cuda
+```cpp
 #include <cuda_runtime_api.h>
 
 int computeCapabilityMajor, computeCapabilityMinor;
@@ -36,7 +36,7 @@ cudaDeviceGetAttribute(&computeCapabilityMajor, cudaDevAttrComputeCapabilityMajo
 cudaDeviceGetAttribute(&computeCapabilityMinor, cudaDevAttrComputeCapabilityMinor, device_id);
 ```
 
-```cuda
+```cpp
 #include <cuda.h>
 
 int computeCapabilityMajor, computeCapabilityMinor;
@@ -44,7 +44,7 @@ cuDeviceGetAttribute(&computeCapabilityMajor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABI
 cuDeviceGetAttribute(&computeCapabilityMinor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, device_id);
 ```
 
-```cuda
+```cpp
 #include <nvml.h> // required linking with -lnvidia-ml
 
 int computeCapabilityMajor, computeCapabilityMinor;

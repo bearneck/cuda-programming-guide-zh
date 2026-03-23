@@ -1,12 +1,12 @@
 # 第三部分：高级 CUDA
 
-> 本文档为 [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/) 官方文档中文翻译版，基于最新版本翻译。
+> 本文档为 [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/) 官方文档中文翻译版
 >
 > 原文地址：[https://docs.nvidia.com/cuda/cuda-programming-guide/part3.html](https://docs.nvidia.com/cuda/cuda-programming-guide/part3.html)
 
 ---
 
-此页面有帮助吗？
+本页面是否有帮助？
 
 # 3. 高级 CUDA
 

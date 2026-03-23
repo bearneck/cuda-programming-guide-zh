@@ -52,7 +52,7 @@
 
 CUDA 驱动程序 API 中的 `cuModuleGetLoadingMode` API 可用于确定延迟加载是否启用。请注意，在运行此函数之前必须初始化 CUDA。示例用法如下面的代码片段所示。
 
-```cuda
+```cpp
 #include "<cuda.h>"
 #include "<assert.h>"
 #include "<iostream>"

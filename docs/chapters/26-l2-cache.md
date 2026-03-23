@@ -27,7 +27,7 @@
 
 用于持久化访问的 L2 缓存预留大小可以在一定范围内调整：
 
-```cuda
+```cpp
 cudaGetDeviceProperties(&prop, device_id);
 size_t size = min(int(prop.l2CacheSize * 0.75), prop.persistingL2CacheMaxSize);
 cudaDeviceSetLimit(cudaLimitPersistingL2CacheSize, size); /* set-aside 3/4 of L2 cache for persisting accesses or the max allowed*/
@@ -45,7 +45,7 @@ cudaDeviceSetLimit(cudaLimitPersistingL2CacheSize, size); /* set-aside 3/4 of L2
 
 **CUDA 流示例**
 
-```cuda
+```cpp
 cudaStreamAttrValue stream_attribute;                                         // 流级别属性数据结构
 stream_attribute.accessPolicyWindow.base_ptr  = reinterpret_cast<void*>(ptr); // 全局内存数据指针
 stream_attribute.accessPolicyWindow.num_bytes = num_bytes;                    // 持久化访问的字节数。
@@ -63,7 +63,7 @@ L2 持久性也可以为 CUDA 图内核节点设置，如下例所示：
 
 **CUDA GraphKernelNode 示例**
 
-```cuda
+```cpp
 cudaKernelNodeAttrValue node_attribute;                                     // 内核级别属性数据结构
 node_attribute.accessPolicyWindow.base_ptr  = reinterpret_cast<void*>(ptr); // 全局内存数据指针
 node_attribute.accessPolicyWindow.num_bytes = num_bytes;                    // 持久性访问的字节数。
@@ -98,7 +98,7 @@ cudaGraphKernelNodeSetAttribute(node, cudaKernelNodeAttributeAccessPolicyWindow,
 
 以下示例展示了如何为持久访问预留 L2 缓存，通过 CUDA 流在 CUDA 内核中使用预留的 L2 缓存，然后重置 L2 缓存。
 
-```cuda
+```cpp
 cudaStream_t stream;
 cudaStreamCreate(&stream);                                                                  // 创建 CUDA 流
 
@@ -163,7 +163,7 @@ CUDA 设备属性包括：
 
 用于持久化内存访问的 L2 缓存预留大小使用 CUDA 运行时 API `cudaDeviceGetLimit` 进行查询，并使用 CUDA 运行时 API `cudaDeviceSetLimit` 作为 `cudaLimit` 进行设置。设置此限制的最大值是 `cudaDeviceProp::persistingL2CacheMaxSize`。
 
-```cuda
+```cpp
 enum cudaLimit {
     /* 其他字段未显示 */
     cudaLimitPersistingL2CacheSize

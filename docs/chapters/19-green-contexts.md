@@ -57,7 +57,7 @@ MPS 主要针对不同的进程（例如 MPI 程序），允许它们在 GPU 上
 
 为了强调使用绿色上下文是多么容易，假设您有以下代码片段，它创建了两个 CUDA 流，然后调用一个函数，该函数在这些 CUDA 流上通过 `<<<>>>` 启动内核。如前所述，除了更改内核的启动配置外，无法影响这些内核可以使用多少个 SM。
 
-```cuda
+```cpp
 int gpu_device_index = 0; // GPU 序号
 CUDA_CHECK(cudaSetDevice(gpu_device_index));
 
@@ -73,7 +73,7 @@ code_that_launches_kernels_on_streams(strm1, strm2); // 此函数中抽象的内
 
 自 CUDA 13.1 起，可以使用绿色上下文来控制给定内核可以访问的 SM 数量。下面的代码片段展示了这有多么容易。只需添加几行代码且无需任何内核修改，您就可以控制在这些不同流上启动的内核可以使用的 SM 资源。
 
-```cuda
+```cpp
 int gpu_device_index = 0; // GPU 序号
 CUDA_CHECK(cudaSetDevice(gpu_device_index));
 
@@ -128,7 +128,7 @@ code_that_launches_kernels_on_streams(strm1, strm2);
 
 目前 `cudaDevResource` 数据结构定义如下：
 
-```cuda
+```cpp
 struct {
      enum cudaDevResourceType type;
      union {
@@ -188,7 +188,7 @@ struct {
 
 通常，起点将是一个 GPU 设备。下面的代码片段展示了如何获取给定 GPU 设备的可用 SM 资源。在成功的 `cudaDeviceGetDevResource` 调用之后，用户可以查看此资源中可用的 SM 数量。
 
-```cuda
+```cpp
 int current_device = 0; // 假设设备序号为 0
 CUDA_CHECK(cudaSetDevice(current_device));
 
@@ -206,7 +206,7 @@ std::cout << "SM co-scheduled alignment: " <<  initial_SM_resources.sm.smCosched
 
 也可以获取可用的工作队列配置资源，如下面的代码片段所示。
 
-```cuda
+```cpp
 int current_device = 0; // 假设设备序号为 0
 CUDA_CHECK(cudaSetDevice(current_device));
 
@@ -248,7 +248,7 @@ cudaDevResource* remaining, unsigned int useFlags, unsigned int minCount)`
 
 以下是一个代码片段，请求将可用的 SM 资源拆分为五组，每组 8 个 SM：
 
-```cuda
+```cpp
 cudaDevResource avail_resources = {};
 // 已填充 avail_resources 的代码未显示
 
@@ -444,7 +444,7 @@ cudaDevResource* remainder, unsigned int flags, cudaDevSmResourceGroupParams* gr
 
 在提供 `cudaDevSmResourceGroupParams` 各个字段的更详细信息之前，[表 16](#green-contexts-split-api-use-cases-examples) 展示了一些示例用例中这些值可能是什么。假设已填充了一个 `initial_GPU_SM_resources` 设备资源，如前面的代码片段所示，并且该资源将被拆分。表中的每一行都将具有相同的起点。为简单起见，该表将仅显示每个用例的 `nbGroups` 值和 `groupParams` 字段，这些值可用于如下所示的代码片段。
 
-```cuda
+```cpp
 int nbGroups = 2; // update as needed
 unsigned int default_split_flags = 0;
 cudaDevResource remainder {}; // update as needed
@@ -509,7 +509,7 @@ CUDA_CHECK(cudaDevSmResourceSplit(&result_use_case[0], nbGroups, &initial_GPU_SM
 
 如果您还想指定工作队列资源，则需要显式完成。以下示例展示了如何为具有平衡共享范围和并发限制为 4 的特定设备创建工作队列配置资源。
 
-```cuda
+```cpp
 cudaDevResource split_result[2] = {{}, {}};
 // 用于填充 split_result[0] 的代码未显示；使用了 nbGroups=1 的 split API
 
@@ -531,7 +531,7 @@ split_result[1].wqConfig.wqConcurrencyLimit = 4;
 
 可以组合多个 `cudaDevResource` 资源。例如，下面的代码片段展示了如何生成一个封装了三组资源的资源描述符。您只需要确保这些资源在 `resources` 数组中都是连续分配的。
 
-```cuda
+```cpp
 cudaDevResource actual_split_result[5] = {};
 // 填充 actual_split_result 的代码未显示
 
@@ -560,7 +560,7 @@ CUDA_CHECK(cudaDevResourceGenerateDesc(&resource_desc, &actual_split_result[2], 
 
 请参见下面的代码片段。
 
-```cuda
+```cpp
 int current_device = 0; // 假设为单 GPU
 CUDA_CHECK(cudaSetDevice(current_device)); // 或 cudaInitDevice
 
@@ -583,7 +583,7 @@ CUDA_CHECK(cudaGreenCtxCreate(&green_ctx, resource_desc, current_device, 0));
 
 要启动一个以前述步骤创建的绿色上下文为目标的内核，首先需要使用 `cudaExecutionCtxStreamCreate` API 为该绿色上下文创建一个流。在该流上使用 `<<< >>>` 或 `cudaLaunchKernel` API 启动内核，将确保该内核只能使用其执行上下文通过该流可用的资源（SM、工作队列）。例如：
 
-```cuda
+```cpp
 // 为先前创建的绿色上下文 green_ctx 创建 green_ctx_stream CUDA 流
 cudaStream_t green_ctx_stream;
 int priority = 0;
@@ -614,7 +614,7 @@ CUDA_CHECK(cudaGetLastError());
 
 下面的代码片段展示了如何使用这些 API。
 
-```cuda
+```cpp
 // 假设 cudaStream_t gc_stream 已创建，且存在 __global__ void cluster_kernel。
 
 // 如果可能，取消注释以支持非可移植集群大小

@@ -33,7 +33,7 @@ GPU 标识符提供方式如下：
 
 **示例**：
 
-```cuda
+```cpp
 nvidia-smi -L # 获取 GPU UUID 列表
 CUDA_VISIBLE_DEVICES=0,1
 CUDA_VISIBLE_DEVICES=GPU-8932f937-d72c-4106-c12f-20bd9faed9f6
@@ -53,7 +53,7 @@ CUDA_VISIBLE_DEVICES=MIG-GPU-8932f937-d72c-4106-c12f-20bd9faed9f6/1/2
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_DEVICE_ORDER=FASTEST_FIRST
 CUDA_DEVICE_ORDER=PCI_BUS_ID
 nvidia-smi --query-gpu=name,pci.bus_id # 获取 PCI 总线 ID 列表
@@ -72,7 +72,7 @@ nvidia-smi --query-gpu=name,pci.bus_id # 获取 PCI 总线 ID 列表
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_MANAGED_FORCE_DEVICE_ALLOC=0
 CUDA_MANAGED_FORCE_DEVICE_ALLOC=1 # 强制使用设备内存
 ```
@@ -94,7 +94,7 @@ CUDA_MANAGED_FORCE_DEVICE_ALLOC=1 # 强制使用设备内存
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_CACHE_DISABLE=1 # 禁用缓存
 CUDA_CACHE_DISABLE=0 # 启用缓存
 ```
@@ -112,7 +112,7 @@ CUDA_CACHE_DISABLE=0 # 启用缓存
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_CACHE_PATH=~/tmp
 ```
 
@@ -131,7 +131,7 @@ CUDA_CACHE_PATH=~/tmp
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_CACHE_MAXSIZE=268435456 # 256 MiB
 ```
 
@@ -151,7 +151,7 @@ CUDA_CACHE_MAXSIZE=268435456 # 256 MiB
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_FORCE_PTX_JIT=1
 ```
 
@@ -172,7 +172,7 @@ CUDA_FORCE_PTX_JIT=1
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_DISABLE_PTX_JIT=1
 ```
 
@@ -189,7 +189,7 @@ CUDA_DISABLE_PTX_JIT=1
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_FORCE_PRELOAD_LIBRARIES=1
 ```
 
@@ -210,7 +210,7 @@ CUDA_FORCE_PRELOAD_LIBRARIES=1
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_LAUNCH_BLOCKING=1
 ```
 
@@ -225,7 +225,7 @@ CUDA_LAUNCH_BLOCKING=1
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_DEVICE_MAX_CONNECTIONS=16
 ```
 
@@ -241,7 +241,7 @@ CUDA_DEVICE_MAX_CONNECTIONS=16
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_DEVICE_MAX_COPY_CONNECTIONS=16
 ```
 
@@ -257,7 +257,7 @@ CUDA_DEVICE_MAX_COPY_CONNECTIONS=16
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_SCALE_LAUNCH_QUEUES=2x
 ```
 
@@ -276,7 +276,7 @@ CUDA_SCALE_LAUNCH_QUEUES=2x
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_GRAPHS_USE_NODE_PRIORITY=1
 ```
 
@@ -295,7 +295,7 @@ CUDA_GRAPHS_USE_NODE_PRIORITY=1
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_DEVICE_WAITS_ON_EXCEPTION=1
 ```
 
@@ -310,7 +310,7 @@ CUDA_DEVICE_WAITS_ON_EXCEPTION=1
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT=25 # 25%
 ```
 
@@ -322,7 +322,7 @@ CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT=25 # 25%
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_DISABLE_PERF_BOOST=1 # 性能提升禁用，仅限 Linux。
 CUDA_DISABLE_PERF_BOOST=0 # 默认行为
 ```
@@ -349,7 +349,7 @@ CUDA_DISABLE_PERF_BOOST=0 # 默认行为
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_MODULE_LOADING=EAGER
 CUDA_MODULE_LOADING=LAZY
 ```
@@ -370,7 +370,7 @@ CUDA_MODULE_LOADING=LAZY
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_MODULE_DATA_LOADING=EAGER
 ```
 
@@ -384,7 +384,7 @@ CUDA_MODULE_DATA_LOADING=EAGER
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_BINARY_LOADER_THREAD_COUNT=4
 ```
 
@@ -402,7 +402,7 @@ CUDA_BINARY_LOADER_THREAD_COUNT=4
 
 **示例**：
 
-```cuda
+```cpp
 CUDA_LOG_FILE=stdout
 CUDA_LOG_FILE=/tmp/dbg_cuda_log
 ```

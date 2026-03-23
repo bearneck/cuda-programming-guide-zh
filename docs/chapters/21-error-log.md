@@ -24,13 +24,13 @@
 
 日志按以下格式输出：
 
-```cuda
+```cpp
 [时间][TID][来源][严重性][API 入口点] 消息
 ```
 
 如果开发者尝试将错误日志管理日志转储到未分配的缓冲区，则会生成以下实际错误消息：
 
-```cuda
+```cpp
 [22:21:32.099][25642][CUDA][E][cuLogsDumpToMemory] buffer cannot be NULL
 ```
 
@@ -42,25 +42,25 @@ CUDA Driver 提供了两类 API 用于与错误日志管理功能交互。
 
 此功能允许开发者注册回调函数，以便在生成错误日志时使用，回调函数签名为：
 
-```cuda
+```cpp
 void callbackFunc(void *data, CUlogLevel logLevel, char *message, size_t length)
 ```
 
 使用此 API 注册回调：
 
-```cuda
+```cpp
 CUresult cuLogsRegisterCallback(CUlogsCallback callbackFunc, void *userData, CUlogsCallbackHandle *callback_out)
 ```
 
 其中 *userData* 会原封不动地传递给回调函数。调用方应存储 *callback_out*，以便在 *cuLogsUnregisterCallback* 中使用。
 
-```cuda
+```cpp
 CUresult cuLogsUnregisterCallback(CUlogsCallbackHandle callback)
 ```
 
 另一组 API 函数用于管理日志的输出。一个重要的概念是日志迭代器，它指向缓冲区的当前末尾：
 
-```cuda
+```cpp
 CUresult cuLogsCurrent(CUlogIterator *iterator_out, unsigned int flags)
 ```
 
@@ -68,7 +68,7 @@ CUresult cuLogsCurrent(CUlogIterator *iterator_out, unsigned int flags)
 
 在任何时候，都可以使用以下函数将错误日志缓冲区转储到文件或内存：
 
-```cuda
+```cpp
 CUresult cuLogsDumpToFile(CUlogIterator *iterator, const char *pathToFile, unsigned int flags)
 CUresult cuLogsDumpToMemory(CUlogIterator *iterator, char *buffer, size_t *size, unsigned int flags)
 ```

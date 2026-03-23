@@ -161,7 +161,7 @@ CUDA C++
 
 生产者线程等待消费者线程发出可以填充共享内存缓冲区的信号。为了等待屏障，生产者线程必须首先到达 `ready[i%2].arrive()` 以获取令牌，然后使用该令牌执行 `ready[i%2].wait(token)`。为简化起见，`ready[i%2].arrive_and_wait()` 合并了这些操作。
 
-```cuda
+```cpp
 bar.arrive_and_wait();
 /* is equivalent to */
 bar.wait(bar.arrive());

@@ -18,13 +18,13 @@
 
 可以在不同的线程作用域创建 `cuda::pipeline`。对于 `cuda::thread_scope_thread` 之外的作用域，需要一个 `cuda::pipeline_shared_state<scope, count>` 对象来协调参与的线程。此状态封装了允许流水线处理最多 `count` 个并发阶段的有限资源。
 
-```cuda
+```cpp
 // 在线程作用域创建流水线
 constexpr auto scope = cuda::thread_scope_thread;
 cuda::pipeline<scope> pipeline = cuda::make_pipeline();
 ```
 
-```cuda
+```cpp
 // 在线程块作用域创建流水线
 constexpr auto scope = cuda::thread_scope_block;
 constexpr auto stages_count = 2;
@@ -34,7 +34,7 @@ auto pipeline = cuda::make_pipeline(group, &shared_state);
 
 流水线可以是*统一的*或*分区的*。在统一流水线中，所有参与的线程既是生产者也是消费者。在分区流水线中，每个参与的线程要么是生产者，要么是消费者，并且其角色在流水线对象的生命周期内不能改变。线程本地流水线不能被分区。要创建分区流水线，我们需要向 `cuda::make_pipeline()` 提供生产者数量或线程的角色。
 
-```cuda
+```cpp
 // 在线程块作用域创建分区流水线，其中只有线程 0 是生产者
 constexpr auto scope = cuda::thread_scope_block;
 constexpr auto stages_count = 2;

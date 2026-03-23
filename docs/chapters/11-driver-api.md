@@ -1,22 +1,22 @@
 # 3.3 CUDA 驱动 API
 
-> 本文档为 [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/) 官方文档中文翻译版，基于最新版本翻译。
+> 本文档为 [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/) 官方文档中文翻译版
 >
 > 原文地址：[https://docs.nvidia.com/cuda/cuda-programming-guide/03-advanced/driver-api.html](https://docs.nvidia.com/cuda/cuda-programming-guide/03-advanced/driver-api.html)
 
 ---
 
-此页面有帮助吗？
+此页面是否有帮助？
 
 # 3.3. CUDA 驱动程序 API
 
-本指南的前几节已经介绍了 CUDA 运行时。如 [CUDA 运行时 API 和 CUDA 驱动程序 API](../01-introduction/cuda-platform.html#cuda-platform-driver-and-runtime) 中所述，CUDA 运行时构建在较低级别的 CUDA 驱动程序 API 之上。本节将介绍 CUDA 运行时与驱动程序 API 之间的一些差异，以及如何混合使用它们。大多数应用程序无需与 CUDA 驱动程序 API 交互即可全性能运行。然而，新的接口有时会先在驱动程序 API 中提供，然后才出现在运行时 API 中，并且一些高级接口，例如 [虚拟内存管理](../04-special-topics/virtual-memory-management.html#virtual-memory-management)，仅通过驱动程序 API 公开。
+本指南的前几节已介绍了 CUDA 运行时。如 [CUDA 运行时 API 和 CUDA 驱动程序 API](../01-introduction/cuda-platform.html#cuda-platform-driver-and-runtime) 中所述，CUDA 运行时构建在较低级别的 CUDA 驱动程序 API 之上。本节将介绍 CUDA 运行时与驱动程序 API 之间的一些差异，以及如何混合使用它们。大多数应用程序无需与 CUDA 驱动程序 API 交互即可实现全性能运行。然而，新的接口有时会先在驱动程序 API 中提供，然后才出现在运行时 API 中，并且一些高级接口（例如 [虚拟内存管理](../04-special-topics/virtual-memory-management.html#virtual-memory-management)）仅在驱动程序 API 中公开。
 
-驱动程序 API 在 `cuda` 动态库（`cuda.dll` 或 `cuda.so`）中实现，该库在安装设备驱动程序时被复制到系统上。其所有入口点都以 `cu` 为前缀。
+驱动程序 API 在 `cuda` 动态库（`cuda.dll` 或 `cuda.so`）中实现，该库在安装设备驱动程序时被复制到系统中。其所有入口点均以 `cu` 为前缀。
 
-它是一个基于句柄的命令式 API：大多数对象通过不透明的句柄引用，这些句柄可以指定给函数以操作对象。
+它是一个基于句柄的命令式 API：大多数对象通过不透明的句柄引用，这些句柄可传递给函数以操作对象。
 
-驱动程序 API 中可用的对象总结在 [表 6](#driver-api-objects-available-in-cuda-driver-api) 中。
+驱动程序 API 中可用的对象总结于 [表 6](#driver-api-objects-available-in-cuda-driver-api)。
 
 | 对象 | 句柄 | 描述 |
 | --- | --- | --- |
@@ -33,13 +33,13 @@
 
 在调用驱动程序 API 的任何函数之前，必须使用 `cuInit()` 初始化驱动程序 API。然后必须创建一个 CUDA 上下文，该上下文附加到特定设备，并使其成为调用主机线程的当前上下文，如 [上下文](#driver-api-context) 中详述。
 
-在 CUDA 上下文中，内核由主机代码显式加载为 PTX 或二进制对象，如 [模块](#driver-api-module) 所述。因此，用 C++ 编写的内核必须单独编译成 *PTX* 或二进制对象。内核使用 API 入口点启动，如 [内核执行](#driver-api-kernel-execution) 所述。
+在 CUDA 上下文中，内核由主机代码显式加载为 PTX 或二进制对象，如 [模块](#driver-api-module) 所述。因此，用 C++ 编写的内核必须单独编译为 *PTX* 或二进制对象。内核使用 API 入口点启动，如 [内核执行](#driver-api-kernel-execution) 所述。
 
 任何希望在未来设备架构上运行的应用程序都必须加载 *PTX*，而不是二进制代码。这是因为二进制代码是特定于架构的，因此与未来的架构不兼容，而 *PTX* 代码在加载时由设备驱动程序编译为二进制代码。
 
-以下是使用驱动程序 API 编写的 [内核](../02-basics/intro-to-cuda-cpp.html#kernels) 示例中的主机代码：
+以下是使用驱动程序 API 编写的 [内核](../02-basics/intro-to-cuda-cpp.html#kernels) 示例的主机代码：
 
-```cuda
+```cpp
 int main()
 {
     int N = ...;
@@ -117,17 +117,19 @@ Each host thread has a stack of current contexts. `cuCtxCreate()` pushes the new
 A usage count is also maintained for each context. `cuCtxCreate()` creates a context with a usage count of 1. `cuCtxAttach()` increments the usage count and `cuCtxDetach()` decrements it. A context is destroyed when the usage count goes to 0 when calling `cuCtxDetach()` or `cuCtxDestroy()`.
 驱动程序 API 与运行时 API 可互操作，并且可以通过 `cuDevicePrimaryCtxRetain()` 从驱动程序 API 访问由运行时管理的主上下文（参见[运行时初始化](../02-basics/intro-to-cuda-cpp.html#intro-cpp-runtime-initialization)）。
 
-使用计数有助于在同一上下文中运行的第三方编写代码之间的互操作性。例如，如果加载三个库以使用同一上下文，每个库将调用 `cuCtxAttach()` 来增加使用计数，并在库使用完上下文时调用 `cuCtxDetach()` 来减少使用计数。对于大多数库，期望应用程序在加载或初始化库之前已创建上下文；这样，应用程序可以使用自己的启发式方法创建上下文，而库只需在提供给它的上下文上操作。希望创建自己上下文的库——其 API 客户端可能已创建也可能未创建自己的上下文，而客户端对此并不知情——将使用 `cuCtxPushCurrent()` 和 `cuCtxPopCurrent()`，如下图所示。
+使用计数有助于在同一上下文中运行的第三方编写代码之间的互操作性。例如，如果三个库被加载以使用同一上下文，每个库将调用 `cuCtxAttach()` 来增加使用计数，并在库使用完上下文时调用 `cuCtxDetach()` 来减少使用计数。对于大多数库，期望应用程序在加载或初始化库之前已创建上下文；这样，应用程序可以使用自己的启发式方法创建上下文，而库只需在提供给它的上下文中操作。希望创建自己上下文的库——其 API 客户端可能已创建也可能未创建自己的上下文——将使用 `cuCtxPushCurrent()` 和 `cuCtxPopCurrent()`，如下图所示。
 
-图 20 库上下文管理[#](#library-context-management)
+![库上下文管理](../images/library-context-management.png)
+
+*图 20 库上下文管理#*
 
 ## 3.3.2. 模块
 
-模块是设备代码和数据的动态可加载包，类似于 Windows 中的 DLL，由 nvcc 输出（参见[使用 NVCC 编译](../02-basics/intro-to-cuda-cpp.html#compilation-with-nvcc)）。所有符号（包括函数、全局变量以及纹理或表面引用）的名称都在模块范围内维护，以便由独立第三方编写的模块可以在同一 CUDA 上下文中互操作。
+模块是设备代码和数据的动态可加载包，类似于 Windows 中的 DLL，由 nvcc 输出（参见[使用 NVCC 编译](../02-basics/intro-to-cuda-cpp.html#compilation-with-nvcc)）。所有符号的名称，包括函数、全局变量以及纹理或表面引用，都在模块作用域内维护，以便由独立第三方编写的模块可以在同一 CUDA 上下文中互操作。
 
 此代码示例加载一个模块并获取某个内核的句柄：
 
-```cuda
+```cpp
 CUmodule cuModule;
 cuModuleLoad(&cuModule, "myModule.ptx");
 CUfunction myKernel;
@@ -136,7 +138,7 @@ cuModuleGetFunction(&myKernel, cuModule, "MyKernel");
 
 此代码示例从 PTX 代码编译并加载一个新模块，并解析编译错误：
 
-```cuda
+```cpp
 #define BUFFER_SIZE 8192
 CUmodule cuModule;
 CUjit_option options[3];
@@ -157,7 +159,7 @@ if (err != CUDA_SUCCESS)
 
 此代码示例从多个 PTX 代码编译、链接并加载一个新模块，并解析链接和编译错误：
 
-```cuda
+```cpp
 #define BUFFER_SIZE 8192
 CUmodule cuModule;
 CUjit_option options[6];
@@ -198,7 +200,7 @@ cuLinkDestroy(linkState);
 ```
 可以通过使用多线程来加速模块链接/加载过程的某些部分，包括加载 cubin 时。此代码示例使用 `CU_JIT_BINARY_LOADER_THREAD_COUNT` 来加速模块加载。
 
-```cuda
+```cpp
 #define BUFFER_SIZE 8192
 CUmodule cuModule;
 CUjit_option options[3];
@@ -223,7 +225,7 @@ if (err != CUDA_SUCCESS)
 
 `cuLaunchKernel()` 使用给定的执行配置启动一个内核。
 
-参数可以通过指针数组（`cuLaunchKernel()` 的倒数第二个参数）传递，其中第 n 个指针对应第 n 个参数并指向从中复制参数的内存区域；或者作为额外选项之一（`cuLaunchKernel()` 的最后一个参数）传递。
+参数可以通过指针数组传递（`cuLaunchKernel()` 的倒数第二个参数），其中第 n 个指针对应第 n 个参数，并指向从中复制参数的内存区域；或者作为额外选项之一传递（`cuLaunchKernel()` 的最后一个参数）。
 
 当参数作为额外选项（`CU_LAUNCH_PARAM_BUFFER_POINTER` 选项）传递时，它们通过一个指向单个缓冲区的指针传递，其中假定参数根据设备代码中每个参数类型的对齐要求彼此正确偏移。
 
@@ -233,7 +235,7 @@ if (err != CUDA_SUCCESS)
 
 以下代码示例使用一个宏（`ALIGN_UP()`）来调整每个参数的偏移量以满足其对齐要求，并使用另一个宏（`ADD_TO_PARAM_BUFFER()`）将每个参数添加到传递给 `CU_LAUNCH_PARAM_BUFFER_POINTER` 选项的参数缓冲区中。
 
-```cuda
+```cpp
 #define ALIGN_UP(offset, alignment) \
       (offset) = ((offset) + (alignment) - 1) & ~((alignment) - 1)
 
@@ -271,9 +273,9 @@ cuLaunchKernel(cuFunction,
                gridWidth, gridHeight, gridDepth,
                0, 0, 0, extra);
 ```
-结构体的对齐要求等于其各字段对齐要求的最大值。因此，包含内置向量类型、`CUdeviceptr` 或未对齐的 `double` 和 `long long` 的结构体，其对齐要求可能在设备代码和主机代码之间有所不同。此类结构体的填充方式也可能不同。例如，以下结构体在主机代码中完全不填充，但在设备代码中，由于字段 `f4` 的对齐要求是 16，因此在字段 `f` 之后会填充 12 个字节。
+结构体的对齐要求等于其各字段对齐要求的最大值。因此，包含内置向量类型、`CUdeviceptr` 或未对齐的 `double` 和 `long long` 的结构体，其对齐要求可能在设备代码和主机代码之间有所不同。此类结构体的填充方式也可能不同。例如，以下结构体在主机代码中完全不进行填充，但在设备代码中，由于字段 `f4` 的对齐要求是 16，因此在字段 `f` 之后会填充 12 个字节。
 
-```cuda
+```cpp
 typedef struct {
     float  f;
     float4 f4;
@@ -284,15 +286,15 @@ typedef struct {
 
 应用程序可以混合使用运行时 API 代码和驱动 API 代码。
 
-如果通过驱动 API 创建了一个上下文并将其设为当前上下文，则后续的运行时调用将使用此上下文，而不会创建新的上下文。
+如果通过驱动 API 创建并设置了当前上下文，后续的运行时调用将使用此上下文，而不是创建新的上下文。
 
-如果运行时已初始化，则可以使用 `cuCtxGetCurrent()` 来检索初始化期间创建的上下文。此上下文可用于后续的驱动 API 调用。
+如果运行时已初始化，可以使用 `cuCtxGetCurrent()` 来检索初始化期间创建的上下文。后续的驱动 API 调用可以使用此上下文。
 
-由运行时隐式创建的上下文称为主上下文（参见[运行时初始化](../02-basics/intro-to-cuda-cpp.html#intro-cpp-runtime-initialization)）。可以通过驱动 API 使用[主上下文管理](https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__PRIMARY__CTX.html)函数来管理它。
+由运行时隐式创建的上下文称为主上下文（参见[运行时初始化](../02-basics/intro-to-cuda-cpp.html#intro-cpp-runtime-initialization)）。可以通过驱动 API 中的[主上下文管理](https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__PRIMARY__CTX.html)函数来管理它。
 
-可以使用任一 API 来分配和释放设备内存。`CUdeviceptr` 可以强制转换为常规指针，反之亦然：
+设备内存可以使用任一 API 进行分配和释放。`CUdeviceptr` 可以转换为常规指针，反之亦然：
 
-```cuda
+```cpp
 CUdeviceptr devPtr;
 float* d_data;
 

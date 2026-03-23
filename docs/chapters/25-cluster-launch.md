@@ -226,7 +226,7 @@ kernel_cluster_launch_control<<<1024, (n + 1023) / 1024>>>(data, n);
 
 下面的内核演示了使用线程块集群的集群启动控制方法。
 
-```cuda
+```cpp
 #include <cooperative_groups.h>
 #include <cuda/ptx>
 
