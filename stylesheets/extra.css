@@ -1,0 +1,60 @@
+/* CUDA Guide 自定义样式 */
+:root {
+  --md-primary-fg-color: #1b5e20;
+  --md-accent-fg-color: #00897b;
+}
+
+/* 代码块美化 */
+.md-typeset pre > code {
+  font-size: 0.85em;
+}
+
+/* 导航增强 */
+.md-nav__title {
+  font-weight: 700;
+}
+
+/* 首页英雄区 */
+.hero {
+  background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #00695c 100%);
+  color: white;
+  padding: 3rem 2rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  color: white !important;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+/* 特性卡片 */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.feature-card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: box-shadow 0.2s;
+}
+
+.feature-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.feature-card h3 {
+  margin-top: 0;
+  color: var(--md-primary-fg-color);
+}
