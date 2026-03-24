@@ -49,17 +49,15 @@ cudaFreeAsync(ptr, cudaStreamPerThread);
 ```
 
 !!! note "Note"
-    When accessing allocation from a stream other than the stream that made the allocation, the
-user must guarantee that the access occurs after the allocation
-operation, otherwise the behavior is undefined.
+当从非执行分配操作的流中访问分配时，用户必须确保访问发生在分配操作之后，否则行为是未定义的。
 
 ### 4.3.2.2.Freeing Memory
 
-`cudaFreeAsync()` asynchronously frees device memory in a stream-ordered fashion, meaning the memory deallocation is assigned to a specific CUDA stream and does not block the host or other streams.
+`cudaFreeAsync()` 以流序方式异步释放设备内存，这意味着内存释放操作被分配到特定的 CUDA 流中执行，并且不会阻塞主机或其他流。
 
-The user must guarantee that the free operation happens after the allocation operation and any uses of the allocation. Any use of the allocation after the free operation starts results in undefined behavior.
+用户必须确保释放操作发生在分配操作以及对该分配的任何使用之后。在释放操作开始后对该分配的任何使用都将导致未定义行为。
 
-Events and/or stream synchronizing operations should be used to guarantee any access to the allocation from other streams is complete before the free operation begins, as illustrated in the following example.
+应使用事件和/或流同步操作来确保在释放操作开始前，来自其他流的任何访问分配操作均已完成，如下例所示。
 
 ```c++
 cudaMallocAsync(&ptr, size, stream1);
@@ -74,7 +72,7 @@ cudaStreamWaitEvent(stream3, event2);
 cudaFreeAsync(ptr, stream3);
 ```
 
-Memory allocated with `cudaMalloc()` can be freed with with `cudaFreeAsync()`. As above, all accesses to the memory must be complete before the free operation begins.
+使用 `cudaMalloc()` 分配的内存可以通过 `cudaFreeAsync()` 释放。如上所述，在释放操作开始之前，对该内存的所有访问都必须已完成。
 
 ```c++
 cudaMalloc(&ptr, size);
@@ -82,7 +80,7 @@ kernel<<<..., stream>>>(ptr, ...);
 cudaFreeAsync(ptr, stream);
 ```
 
-Likewise, memory allocated with `cudaMallocAsync` can be freed with `cudaFree()`. When freeing such allocations through the `cudaFree()` API, the driver assumes that all accesses to the allocation are complete and performs no further synchronization. The user can use `cudaStreamQuery` / `cudaStreamSynchronize` / `cudaEventQuery` / `cudaEventSynchronize` / `cudaDeviceSynchronize` to guarantee that the appropriate asynchronous work is complete and that the GPU will not try to access the allocation.
+同样地，使用 `cudaMallocAsync` 分配的内存也可以通过 `cudaFree()` 来释放。当通过 `cudaFree()` API 释放此类分配时，驱动程序会假定对该分配的所有访问均已完成，并且不会执行进一步的同步。用户可以使用 `cudaStreamQuery` / `cudaStreamSynchronize` / `cudaEventQuery` / `cudaEventSynchronize` / `cudaDeviceSynchronize` 来确保相应的异步工作已完成，并且 GPU 不会尝试访问该分配。
 
 ```c++
 cudaMallocAsync(&ptr, size,stream);
@@ -94,11 +92,11 @@ cudaFree(ptr);
 
 ## 4.3.3.Memory Pools
 
-Memory pools encapsulate virtual address and physical memory resources that are allocated and managed according to the pools attributes and properties. The primary aspect of a memory pool is the kind and location of memory it manages.
+内存池封装了虚拟地址和物理内存资源，这些资源根据内存池的属性和特性进行分配和管理。内存池的主要特性在于其管理的内存类型和位置。
 
-All calls to `cudaMallocAsync` use resources from memory pool. If a memory pool is not specified, `cudaMallocAsync` uses the current memory pool of the supplied streamâs device. The current memory pool for a device may be set with `cudaDeviceSetMempool` and queried with `cudaDeviceGetMempool`. Each device has a default memory pool, which is active if `cudaDeviceSetMempool` has not been called.
-API `cudaMallocFromPoolAsync` 和 [c++ overloads of
-cudaMallocAsync](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__HIGHLEVEL.html#group__CUDART__HIGHLEVEL_1ga31efcffc48981621feddd98d71a0feb) 允许用户指定用于分配的内存池，而无需将其设置为当前池。API `cudaDeviceGetDefaultMempool` 和 `cudaMemPoolCreate` 返回内存池的句柄。`cudaMemPoolSetAttribute` 和 `cudaMemPoolGetAttribute` 控制内存池的属性。
+所有对 `cudaMallocAsync` 的调用都使用内存池中的资源。如果未指定内存池，`cudaMallocAsync` 将使用所提供流（stream）所在设备的当前内存池。可以通过 `cudaDeviceSetMempool` 设置设备的当前内存池，并通过 `cudaDeviceGetMempool` 查询。每个设备都有一个默认内存池，如果未调用 `cudaDeviceSetMempool`，则默认池处于活动状态。
+
+API `cudaMallocFromPoolAsync` 和 [cudaMallocAsync 的 C++ 重载](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__HIGHLEVEL.html#group__CUDART__HIGHLEVEL_1ga31efcffc48981621feddd98d71a0feb) 允许用户指定用于分配的内存池，而无需将其设置为当前池。API `cudaDeviceGetDefaultMempool` 和 `cudaMemPoolCreate` 返回内存池的句柄。`cudaMemPoolSetAttribute` 和 `cudaMemPoolGetAttribute` 控制内存池的属性。
 
 !!! note "注意"
     设备的当前内存池将是该设备本地的。因此，在不指定内存池的情况下进行分配，将始终产生流设备本地的分配。
@@ -217,15 +215,15 @@ cudaMemPoolImportFromShareableHandle(&importedMemPool,
 
 #### 4.3.3.4.2.Set Access in the Importing Process
 
-Imported memory pools are initially only accessible from their resident device. The imported memory pool does not inherit any accessibility set by the exporting process. The importing process needs to enable access with `cudaMemPoolSetAccess` from any GPU it plans to access the memory from.
+导入的内存池最初仅可从其驻留设备访问。导入的内存池不会继承导出进程设置的任何可访问性。导入进程需要通过 `cudaMemPoolSetAccess` 从计划访问该内存的任何 GPU 启用访问权限。
 
-If the imported memory pool belongs to a device that is not visible to importing process, the user must use the `cudaMemPoolSetAccess` API to enable access from the GPUs the allocations will be used on. (See [Device Accessibility for Multi-GPU Support](#stream-ordered-deviceaccessibility))
+如果导入的内存池所属设备对导入进程不可见，用户必须使用 `cudaMemPoolSetAccess` API 来启用分配将使用的 GPU 的访问权限。（参见[多 GPU 支持的设备可访问性](#stream-ordered-deviceaccessibility)）
 
 #### 4.3.3.4.3.Creating and Sharing Allocations from an Exported Pool
 
-Once the pool has been shared, allocations made with `cudaMallocAsync()` from the pool in the exporting process can be shared with processes that have imported the pool. Since the poolâs security policy is established and verified at the pool level, the OS does not need extra bookkeeping to provide security for specific pool allocations. In other words, the opaque `cudaMemPoolPtrExportData` required to import a pool allocation may be sent to the importing process using any mechanism.
+一旦池被共享，导出进程中通过 `cudaMallocAsync()` 从该池进行的分配就可以与导入该池的进程共享。由于池的安全策略是在池级别建立和验证的，操作系统无需额外的簿记工作来为特定的池分配提供安全保障。换句话说，导入池分配所需的不透明数据 `cudaMemPoolPtrExportData` 可以通过任何机制发送给导入进程。
 
-While allocations may be exported and imported without synchronizing with the allocating stream in any way, the importing process must follow the same rules as the exporting process when accessing the allocation. Specifically, access to the allocation must happen after the allocation operation in the allocating stream executes. The two following code snippets show `cudaMemPoolExportPointer()` and `cudaMemPoolImportPointer()` sharing the allocation with an IPC event used to guarantee that the allocation isnât accessed in the importing process before the allocation is ready.
+虽然分配操作可以在不与分配流进行任何同步的情况下导出和导入，但导入进程在访问分配时必须遵循与导出进程相同的规则。具体来说，对分配的访问必须在分配流中的分配操作执行之后进行。以下两个代码片段展示了 `cudaMemPoolExportPointer()` 和 `cudaMemPoolImportPointer()` 如何与一个 IPC 事件共享分配，该事件用于确保在分配准备就绪之前，导入进程不会访问该分配。
 
 ```c++
 // preparing an allocation in the exporting process
@@ -275,7 +273,7 @@ cudaStreamWaitEvent(stream, readyIpcEvent);
 kernel<<<..., stream>>>(ptr, ...);
 ```
 
-When freeing the allocation, the allocation must be freed in the importing process before it is freed in the exporting process. The following code snippet demonstrates the use of CUDA IPC events to provide the required synchronization between the `cudaFreeAsync` operations in both processes. Access to the allocation from the importing process is obviously restricted by the free operation in the importing process side. It is worth noting that `cudaFree` can be used to free the allocation in both processes and that other stream synchronization APIs may be used instead of CUDA IPC events.
+在释放分配时，必须在导出进程中释放之前，先在导入进程中释放该分配。以下代码片段演示了如何使用 CUDA IPC 事件来为两个进程中的 `cudaFreeAsync` 操作提供所需的同步。显然，导入进程对分配的访问会受到导入进程端释放操作的限制。值得注意的是，`cudaFree` 可用于在两个进程中释放分配，并且可以使用其他流同步 API 来代替 CUDA IPC 事件。
 
 ```c++
 // The free must happen in importing process before the exporting process
@@ -302,15 +300,15 @@ cudFreeAsync(ptrInExportingProcess,stream);
 
 #### 4.3.3.4.4.IPC Export Pool Limitations
 
-IPC pools currently do not support releasing physical blocks back to the OS. As a result the `cudaMemPoolTrimTo` API has no effect and the `cudaMemPoolAttrReleaseThreshold` is effectively ignored. This behavior is controlled by the driver, not the runtime and may change in a future driver update.
+IPC 池目前不支持将物理块释放回操作系统。因此，`cudaMemPoolTrimTo` API 无效，且 `cudaMemPoolAttrReleaseThreshold` 实际上被忽略。此行为由驱动程序控制，而非运行时，并可能在未来的驱动程序更新中更改。
 
 #### 4.3.3.4.5.IPC Import Pool Limitations
 
-Allocating from an import pool is not allowed; specifically, import pools cannot be set current and cannot be used in the `cudaMallocFromPoolAsync` API. As such, the allocation reuse policy attributes do not have meaning for these pools.
+不允许从导入池进行分配；具体来说，导入池不能被设置为当前池，也不能在 `cudaMallocFromPoolAsync` API 中使用。因此，分配重用策略属性对这些池没有意义。
 
-IPC Import pools, like IPC export pools, currently do not support releasing physical blocks back to the OS.
+IPC 导入池与 IPC 导出池一样，目前不支持将物理块释放回操作系统。
 
-The resource usage stat attribute queries only reflect the allocations imported into the process and the associated physical memory.
+资源使用统计属性查询仅反映导入到进程中的分配及其关联的物理内存。
 
 ## 4.3.4.Best Practices and Tuning
 ### 4.3.4.1. 查询支持情况

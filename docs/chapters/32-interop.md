@@ -1242,7 +1242,7 @@ NvSciBufObjDupWithReducePerm(bufferObjRaw, NvSciBufAccessPerm_Readonly, &bufferO
 return bufferObjRo;
 ```
 
-The allocated NvSciBuf memory object can be imported in CUDA using the NvSciBufObj handle as shown below. Application should query the allocated NvSciBufObj for attributes required for filling CUDA External Memory Descriptor. Note that the attribute list and NvSciBuf objects should be maintained by the application. If the NvSciBuf object imported into CUDA is also mapped by other drivers, then based on `NvSciBufGeneralAttrKey_GpuSwNeedCacheCoherency` output attribute value the application must use NvSciSync objects (refer to [Importing Synchronization Objects](#importing-synchronization-objects-nvsci)) as appropriate barriers to maintain coherence between CUDA and the other drivers.
+已分配的 NvSciBuf 内存对象可使用 NvSciBufObj 句柄导入 CUDA，如下所示。应用程序应查询已分配的 NvSciBufObj，以获取填充 CUDA 外部内存描述符所需的属性。请注意，属性列表和 NvSciBuf 对象应由应用程序维护。如果导入 CUDA 的 NvSciBuf 对象也被其他驱动程序映射，则根据 `NvSciBufGeneralAttrKey_GpuSwNeedCacheCoherency` 输出属性值，应用程序必须使用 NvSciSync 对象（请参阅[导入同步对象](#importing-synchronization-objects-nvsci)）作为适当的屏障，以维护 CUDA 与其他驱动程序之间的缓存一致性。
 
 !!! note "Note"
     For more details on how to allocate and maintain NvSciBuf objects refer to NvSciBuf API Documentation.

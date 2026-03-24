@@ -647,24 +647,24 @@ int main() {
 }
 ```
 
-Note that any function call that logically guarantees the GPU completes its work is valid to ensure logically that the GPU work is completed, see [Explicit Synchronization](../03-advanced/advanced-host-programming.html#advanced-host-explicit-synchronization).
+请注意，任何在逻辑上保证 GPU 完成其工作的函数调用，都可用于确保 GPU 工作在逻辑上已完成，详见[显式同步](../03-advanced/advanced-host-programming.html#advanced-host-explicit-synchronization)。
 
-Note that if memory is dynamically allocated with `cudaMallocManaged()` or `cuMemAllocManaged()` while the GPU is active, the behavior of the memory is unspecified until additional work is launched or the GPU is synchronized. Attempting to access the memory on the CPU during this time may or may not cause a segmentation fault. This does not apply to memory allocated using the flag `cudaMemAttachHost` or `CU_MEM_ATTACH_HOST`.
+请注意，如果在 GPU 处于活动状态时使用 `cudaMallocManaged()` 或 `cuMemAllocManaged()` 动态分配内存，则该内存的行为在启动额外工作或同步 GPU 之前是未定义的。在此期间尝试在 CPU 上访问该内存可能会导致段错误，也可能不会。这不适用于使用标志 `cudaMemAttachHost` 或 `CU_MEM_ATTACH_HOST` 分配的内存。
 
 ### 4.1.3.3.Stream Associated Unified Memory
 
-The CUDA programming model provides streams as a mechanism for programs to indicate dependence and independence among kernel launches. Kernels launched into the same stream are guaranteed to execute consecutively, while kernels launched into different streams are permitted to execute concurrently.  See section [CUDA Streams](../02-basics/asynchronous-execution.html#cuda-streams).
+CUDA 编程模型提供了流（stream）机制，使程序能够指明内核启动之间的依赖关系和独立性。保证在同一个流中启动的内核会连续执行，而允许在不同流中启动的内核并发执行。详见章节 [CUDA 流](../02-basics/asynchronous-execution.html#cuda-streams)。
 
 #### 4.1.3.3.1.Stream Callbacks
 
-It is legal for the CPU to access managed data from within a stream callback, provided no other stream that could potentially be accessing managed data is active on the GPU. In addition, a callback that is not followed by any device work can be used for synchronization: for example, by signaling a condition variable from inside the callback; otherwise, CPU access is valid only for the duration of the callback(s). There are several important points of note:
+如果 GPU 上没有其他可能访问托管数据的流处于活动状态，则 CPU 在流回调函数内部访问托管数据是合法的。此外，一个后面不跟随任何设备工作的回调函数可用于同步：例如，从回调函数内部发出条件变量信号；否则，CPU 访问仅在回调函数执行期间有效。有几点需要注意：
 
-1. It is always permitted for the CPU to access non-managed mapped memory data while the GPU is active.
-2. The GPU is considered active when it is running any kernel, even if that kernel does not make use of managed data. If a kernel might use data, then access is forbidden
-3. There are no constraints on concurrent inter-GPU access of managed memory, other than those that apply to multi-GPU access of non-managed memory.
-4. There are no constraints on concurrent GPU kernels accessing managed data.
+1. 当 GPU 处于活动状态时，CPU 始终可以访问非托管映射内存数据。
+2. 当 GPU 正在运行任何内核时，即被视为活动状态，即使该内核不使用托管数据。如果某个内核可能使用数据，则禁止访问。
+3. 对托管内存的并发 GPU 间访问没有限制，除了那些适用于非托管内存的多 GPU 访问的限制。
+4. 对访问托管数据的并发 GPU 内核没有限制。
 
-Note how the last point allows for races between GPU kernels, as is currently the case for non-managed GPU memory. In the perspective of the GPU, managed memory functions are identical to non-managed memory. The following code example illustrates these points:
+请注意最后一点如何允许 GPU 内核之间的竞争，这与当前非托管 GPU 内存的情况相同。从 GPU 的角度来看，托管内存的功能与非托管内存完全相同。以下代码示例说明了这些要点：
 
 ```c++
 int main() {
@@ -759,19 +759,19 @@ void run_task(int *in, int *out, int length) {
 }
 ```
 
-In this example, the allocation-stream association is established just once, and then data is used repeatedly by both the host and device. The result is much simpler code than occurs with explicitly copying data between host and device, although the result is the same.
+在此示例中，分配与流的关联仅建立一次，随后主机和设备便可重复使用数据。尽管最终效果与在主机和设备间显式复制数据相同，但代码却因此简洁得多。
 
-The function `cudaMallocManaged()` specifies the cudaMemAttachHost flag, which creates an allocation that is initially invisible to device-side execution. (The default allocation would be visible to all GPU kernels on all streams.) This ensures that there is no accidental interaction with another threadâs execution in the interval between the data allocation and when the data is acquired for a specific stream.
+函数 `cudaMallocManaged()` 指定了 `cudaMemAttachHost` 标志，这会创建一个初始对设备端执行不可见的分配。（默认分配对所有流上的所有 GPU 内核都是可见的。）这确保了在数据分配和特定流获取数据之间的时间间隔内，不会与其他线程的执行发生意外的交互。
 
-Without this flag, a new allocation would be considered in-use on the GPU if a kernel launched by another thread happens to be running. This might impact the threadâs ability to access the newly allocated data from the CPU before it is able to explicitly attach it to a private stream. To enable safe independence between threads, therefore, allocations should be made specifying this flag.
+若不使用此标志，当其他线程启动的内核恰好在运行时，新分配的内存将被视为在 GPU 上处于使用状态。这可能会影响线程在能够显式将新分配的数据附加到私有流之前，从 CPU 访问该数据的能力。因此，为了实现线程间的安全独立性，分配内存时应指定此标志。
 
-An alternative would be to place a process-wide barrier across all threads after the allocation has been attached to the stream. This would ensure that all threads complete their data/stream associations before any kernels are launched, avoiding the hazard. A second barrier would be needed before the stream is destroyed because stream destruction causes allocations to revert to their default visibility. The `cudaMemAttachHost` flag exists both to simplify this process, and because it is not always possible to insert global barriers where required.
+另一种方案是在分配操作附加到流之后，在所有线程之间设置一个进程范围的屏障。这将确保所有线程在启动任何内核之前完成其数据/流关联，从而避免风险。在销毁流之前还需要第二个屏障，因为流的销毁会导致分配恢复为其默认可见性。`cudaMemAttachHost` 标志的存在既是为了简化此过程，也是因为并非总能在需要的位置插入全局屏障。
 
 #### 4.1.3.3.4.Data Movement of Stream Associated Unified Memory
 
-Memcpy()/Memset() with stream associated unified memory behaves different on devices where `concurrentManagedAccess` is not set, the following rules apply:
+当 `concurrentManagedAccess` 未设置的设备上，与流关联的统一内存执行 Memcpy()/Memset() 时，其行为有所不同，适用以下规则：
 
-If `cudaMemcpyHostTo*` is specified and the source data is unified memory, then it will be accessed from the host if it is coherently accessible from the host in the copy stream [(1)](#um-legacy-memcpy-cit1); otherwise it will be accessed from the device. Similar rules apply to the destination when `cudaMemcpy*ToHost` is specified and the destination is unified memory.
+如果指定了 `cudaMemcpyHostTo*` 并且源数据是统一内存，那么当该数据在复制流中可从主机一致访问时，将从主机访问它 [(1)](#um-legacy-memcpy-cit1)；否则将从设备访问。当指定 `cudaMemcpy*ToHost` 且目标是统一内存时，类似规则适用于目标。
 如果指定了 `cudaMemcpyDeviceTo*` 并且源数据是统一内存，那么将从设备访问该数据。源数据必须在复制流中可从设备一致访问 [(2)](#um-legacy-memcpy-cit2)；否则，将返回错误。当指定 `cudaMemcpy*ToDevice` 且目标是统一内存时，类似规则适用于目标。
 
 如果指定了 `cudaMemcpyDefault`，那么统一内存将从主机访问，前提是它无法在复制流中从设备一致访问 [(2)](#um-legacy-memcpy-cit2)，或者数据的首选位置是 `cudaCpuDeviceId` 且它可以在复制流中从主机一致访问 [(1)](#um-legacy-memcpy-cit1)；否则，它将从设备访问。

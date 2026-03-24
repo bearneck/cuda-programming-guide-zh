@@ -523,17 +523,17 @@ static_assert(false, "Device code is being compiled with older architectures tha
 #endif // __CUDA_MINIMUM_ARCH__
 ```
 
-Note that `cuda::memcpy_async` uses TMA if the source and destination addresses are 16-byte aligned and the size is a multiple of 16 bytes, otherwise it falls back to synchronous copies. On the other hand, `cuda::device::memcpy_async_tx` and `cuda::ptx::cp_async_bulk` always use TMA and will result in undefined behavior if the requirements are not met.
+请注意，`cuda::memcpy_async` 在源地址和目标地址 16 字节对齐且大小为 16 字节的倍数时使用 TMA，否则将回退到同步复制。另一方面，`cuda::device::memcpy_async_tx` 和 `cuda::ptx::cp_async_bulk` 始终使用 TMA，如果未满足要求将导致未定义行为。
 
-In the following, we demonstrate how to use bulk-asynchronous copies through an example. The example read-modify-writes a one-dimensional array. The kernel goes through the following steps:
+接下来，我们通过一个示例来演示如何使用批量异步拷贝。该示例对一个一维数组进行读取-修改-写入操作。内核的执行步骤如下：
 
-1. Initialize a shared memory barrier as a completion mechanism for the bulk-asynchronous copy from global to shared memory.
-2. Initiate the copy of a block of memory from global to shared memory.
-3. Arrive and wait on the shared memory barrier for completion of the copy.
-4. Increment the shared memory buffer values.
-5. Use a proxy fence to ensure shared memory writes (generic proxy) become visible to the subsequent bulk-asynchronous copy (async proxy).
-6. Initiate a bulk-asynchronous copy of the buffer in shared memory to global memory.
-7. Wait for the bulk-asynchronous copy to have finished reading shared memory.
+1. 初始化一个共享内存屏障，作为从全局内存到共享内存的批量异步拷贝的完成机制。
+2. 启动从全局内存到共享内存的内存块拷贝。
+3. 到达共享内存屏障并等待拷贝完成。
+4. 递增共享内存缓冲区的值。
+5. 使用代理栅栏（proxy fence）确保共享内存写入（通用代理）对后续的批量异步拷贝（异步代理）可见。
+6. 启动共享内存中缓冲区的批量异步拷贝到全局内存。
+7. 等待批量异步拷贝完成对共享内存的读取。
 
 ```cuda
 #include <cuda/barrier>
@@ -770,7 +770,7 @@ __global__ void prefetch_kernel(int* global_out, int const* global_in, size_t si
 
 接下来，我们将描述如何使用 CUDA 驱动程序 API 创建张量映射、如何将其传递给设备，以及如何在设备上使用它。
 
-**驱动程序 API**。张量映射是使用 [cuTensorMapEncodeTiled](https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TENSOR__MEMORY.html) 驱动程序 API 创建的。可以通过直接链接驱动程序 (`-lcuda`) 或使用 [cudaGetDriverEntryPointByVersion](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__DRIVER__ENTRY__POINT.html) API 来访问此 API。下面，我们展示如何获取指向 `cuTensorMapEncodeTiled` API 的指针。更多信息，请参阅 [驱动程序入口点访问](driver-entry-point-access.html#driver-entry-point-access)。
+**驱动程序 API**。张量映射是使用 [cuTensorMapEncodeTiled](https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TENSOR__MEMORY.html) 驱动程序 API 创建的。可以通过直接链接驱动程序库 (`-lcuda`) 或使用 [cudaGetDriverEntryPointByVersion](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__DRIVER__ENTRY__POINT.html) API 来访问此 API。下面，我们展示如何获取指向 `cuTensorMapEncodeTiled` API 的指针。更多信息，请参阅 [驱动程序入口点访问](driver-entry-point-access.html#driver-entry-point-access)。
 
 ```c++
 #include <cudaTypedefs.h> // PFN_cuTensorMapEncodeTiled, CUtensorMap
@@ -841,7 +841,7 @@ int main() {
 }
 ```
 
-As an alternative to the `__grid_constant__` kernel parameter, a global `__constant__` variable can be used. An example is included below.
+作为 `__grid_constant__` 内核参数的替代方案，可以使用全局 `__constant__` 变量。下面包含一个示例。
 
 ```cuda
 #include <cuda.h>
@@ -859,7 +859,7 @@ int main() {
 }
 ```
 
-Finally, it is possible to copy the tensor map to global memory. Using a pointer to a tensor map in global device memory requires a fence in each thread block before any thread in the block uses the updated tensor map. Further uses of the tensor map by that thread block do not need to be fenced unless the tensor map is modified again. Note that this mechanism may be slower than the two mechanisms described above.
+最后，可以将张量映射复制到全局内存。使用指向全局设备内存中张量映射的指针时，需要在每个线程块中执行一次栅栏操作，然后该线程块中的任何线程才能使用更新后的张量映射。该线程块后续使用张量映射时无需再次栅栏，除非张量映射再次被修改。请注意，此机制可能比上述两种机制更慢。
 
 ```cuda
 #include <cuda.h>
@@ -886,7 +886,7 @@ int main() {
 }
 ```
 
-**Use**. The kernel below loads a 2D tile of size `SMEM_HEIGHT x SMEM_WIDTH` from a larger 2D array. The top-left corner of the tile is indicated by the indices `x` and `y`. The tile is loaded into shared memory, modified, and written back to global memory.
+**用途**。以下内核从更大的二维数组中加载一个大小为 `SMEM_HEIGHT x SMEM_WIDTH` 的二维图块。该图块的左上角由索引 `x` 和 `y` 指定。图块被加载到共享内存中，经过修改，然后写回全局内存。
 
 ```cuda
 #include <cuda.h>         // CUtensormap

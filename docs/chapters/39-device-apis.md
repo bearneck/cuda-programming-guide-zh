@@ -123,8 +123,8 @@ void __pipeline_commit();
 void __pipeline_wait_prior(size_t N);
 ```
 
-- Let {0, 1, 2, ..., L} be the sequence of indices associated with invocations of __pipeline_commit() by a given thread.
-- Wait for completion of batches at least up to and including L-N .
+- 令 {0, 1, 2, ..., L} 为给定线程调用 __pipeline_commit() 所关联的索引序列。
+- 等待至少包含并直至 L-N 的批次完成。
 
 ### 5.6.2.4.Arrive On Barrier Primitive
 
@@ -132,8 +132,8 @@ void __pipeline_wait_prior(size_t N);
 void __pipeline_arrive_on(__mbarrier_t* bar);
 ```
 
-- bar points to a barrier in shared memory.
-- Increments the barrier arrival count by one, when all memcpy_async operations sequenced before this call have completed, the arrival count is decremented by one and hence the net effect on the arrival count is zero. It is userâs responsibility to make sure that the increment on the arrival count does not exceed __mbarrier_maximum_count() .
+-   `bar` 指向共享内存中的一个屏障。
+-   将屏障到达计数加一；当在此调用之前排序的所有 `memcpy_async` 操作都完成后，到达计数减一，因此对到达计数的净影响为零。用户需确保到达计数的增量不超过 `__mbarrier_maximum_count()`。
 
 ## 5.6.3.Cooperative Groups API
 
@@ -141,7 +141,7 @@ void __pipeline_arrive_on(__mbarrier_t* bar);
 
 #### 5.6.3.1.1.class thread_block
 
-Any CUDA programmer is already familiar with a certain group of threads: the thread block. The Cooperative Groups extension introduces a new datatype, `thread_block`, to explicitly represent this concept within the kernel.
+任何 CUDA 程序员都已熟悉一个特定的线程组：线程块。Cooperative Groups 扩展引入了一种新的数据类型 `thread_block`，以在内核中显式地表示这一概念。
 
 `class thread_block;`
 
@@ -153,19 +153,19 @@ thread_block g = this_thread_block();
 
 **Public Member Functions:**
 
-`static void sync()`: Synchronize the threads named in the group, equivalent to `g.barrier_wait(g.barrier_arrive())`
+`static void sync()`：同步组内命名的线程，等价于 `g.barrier_wait(g.barrier_arrive())`
 
-`thread_block::arrival_token barrier_arrive()`: Arrive on the thread_block barrier, returns a token that needs to be passed into `barrier_wait()`.
+`thread_block::arrival_token barrier_arrive()`: 抵达线程块屏障，返回一个需要传递给 `barrier_wait()` 的令牌。
 
-`void barrier_wait(thread_block::arrival_token&& t)`: Wait on the `thread_block` barrier, takes arrival token returned from `barrier_arrive()` as an rvalue reference.
+`void barrier_wait(thread_block::arrival_token&& t)`：在 `thread_block` 屏障上等待，接受从 `barrier_arrive()` 返回的到达令牌作为右值引用。
 
 `static unsigned int thread_rank()`: Rank of the calling thread within [0, num_threads)
 
-`static dim3 group_index()`: 3-Dimensional index of the block within the launched grid
+`static dim3 group_index()`: 被启动的线程网格内，线程块的 3 维索引
 
-`static dim3 thread_index()`: 3-Dimensional index of the thread within the launched block
+`static dim3 thread_index()`: 线程在已启动的线程块内的三维索引
 
-`static dim3 dim_threads()`: Dimensions of the launched block in units of threads
+`static dim3 dim_threads()`: 已启动线程块的维度，以线程数为单位
 
 `static unsigned int num_threads()`: Total number of threads in the group
 
@@ -193,9 +193,9 @@ __global__ void kernel(int *globalInput) {
 }
 ```
 
-**Note:** that all threads in the group must participate in collective operations, or the behavior is undefined.
+**注意：** 组内的所有线程都必须参与集体操作，否则行为是未定义的。
 
-**Related:** The `thread_block` datatype is derived from the more generic `thread_group` datatype, which can be used to represent a wider class of groups.
+**相关说明：** `thread_block` 数据类型派生自更通用的 `thread_group` 数据类型，后者可用于表示更广泛的线程组类别。
 #### 5.6.3.1.2.class cluster_group
 
 此群组对象表示在单个集群中启动的所有线程。这些 API 在计算能力 9.0+ 的所有硬件上可用。在这种情况下，当启动一个非集群网格时，API 会假定集群大小为 1x1x1。
@@ -810,7 +810,7 @@ return op(inclusive_scan(group, val, op), old);
 
 `cooperative_groups/scan.h` header needs to be included.
 
-**Example of stream compaction using exclusive_scan:**
+**使用 exclusive_scan 进行流压缩的示例：**
 
 ```c++
 #include <cooperative_groups.h>
@@ -849,7 +849,7 @@ __device__ int stream_compaction(Group &g, Data *input, int count, TyFn&& test_f
 }
 ```
 
-**Example of dynamic buffer space allocation using exclusive_scan_update:**
+**使用 exclusive_scan_update 动态分配缓冲区空间的示例：**
 
 ```c++
 #include <cooperative_groups.h>
@@ -1207,7 +1207,7 @@ __global__ void P( ... ) {
 }
 ```
 
-Grids launched into the tail launch stream will not launch until the completion of all work by the parent grid, including all other grids (and their descendants) launched by the parent in all non-tail launched streams, including work executed or launched after the tail launch.
+在尾流（tail launch stream）中启动的线程网格（grid）将不会启动，直到父网格（parent grid）完成所有工作为止，这包括父网格在所有非尾流（non-tail launched streams）中启动的所有其他网格（及其后代网格），以及在尾流启动之后执行或启动的工作。
 
 ```c++
 // In this example, C will only launch after all X, F and P complete.
@@ -1218,7 +1218,7 @@ __global__ void P( ... ) {
 }
 ```
 
-The next grid in the parent gridâs stream will not be launched before a parent gridâs tail launch work has completed. In other words, the tail launch stream behaves as if it were inserted between its parent grid and the next grid in its parent gridâs stream.
+在父网格所在流中的下一个网格，将在父网格的尾部启动工作完成之前不会启动。换句话说，尾部启动流的行为，就好像它被插入在其父网格与父网格所在流中的下一个网格之间一样。
 
 ```c++
 // In this example, P2 will only launch after C completes.
@@ -1237,7 +1237,7 @@ int main ( ... ) {
 }
 ```
 
-Each grid only gets one tail launch stream. To tail launch concurrent grids, it can be done like the example below.
+每个网格仅获得一个尾部启动流。要尾部启动并发网格，可以按照以下示例进行操作。
 
 ```c++
 // In this example,  C1 and C2 will launch concurrently after P's completion
@@ -1252,10 +1252,10 @@ __global__ void P( ... ) {
 }
 ```
 
-The tail launch stream cannot be used to record or wait on events. Attempting to do so results in `cudaErrorInvalidValue`. The tail launch stream is not supported when compiled with `CUDA_FORCE_CDP1_IF_SUPPORTED` defined. Tail launch stream usage requires compilation to be in 64-bit mode.
+尾启动流（tail launch stream）不能用于记录事件或等待事件。尝试执行此类操作将导致 `cudaErrorInvalidValue` 错误。当编译时定义了 `CUDA_FORCE_CDP1_IF_SUPPORTED` 宏时，尾启动流不受支持。使用尾启动流要求编译必须处于 64 位模式。
 
 ### 5.6.4.9.ECC Errors
 
-No notification of ECC errors is available to code within a CUDA kernel. ECC errors are reported at the host side once the entire launch tree has completed. Any ECC errors which arise during execution of a nested program will either generate an exception or continue execution (depending upon error and configuration).
+在 CUDA 内核内部执行的代码无法收到 ECC 错误的通知。ECC 错误会在整个启动树完成后在主机端报告。在嵌套程序执行期间出现的任何 ECC 错误，要么会生成异常，要么会继续执行（具体取决于错误类型和配置）。
 
  On this page

@@ -165,7 +165,7 @@ CUmemGenericAllocationHandle allocHandle;
 cuMemCreate(&allocHandle, padded_size, &prop, 0);
 ```
 
-After creating allocation handle using `cuMemCreate` the user can export that handle to the other node, Node B, calling `cuMemExportToShareableHandle`:
+在使用 `cuMemCreate` 创建分配句柄后，用户可以将该句柄导出到另一个节点（节点 B），方法是调用 `cuMemExportToShareableHandle`：
 
 ```c++
 cuMemExportToShareableHandle(&fabricHandle, allocHandle,
@@ -173,7 +173,7 @@ cuMemExportToShareableHandle(&fabricHandle, allocHandle,
 // At this point, fabricHandle should be sent to Node B via TCP/IP.
 ```
 
-On Node B, the handle can be imported using `cuMemImportFromShareableHandle` and treated as any other fabric handle
+在节点 B 上，可以使用 `cuMemImportFromShareableHandle` 导入该句柄，并将其视为任何其他结构句柄进行处理。
 
 ```c++
 // At this point, fabricHandle should be received from Node A via TCP/IP.
@@ -182,7 +182,7 @@ cuMemImportFromShareableHandle(&allocHandle, &fabricHandle,
                                CU_MEM_HANDLE_TYPE_FABRIC);
 ```
 
-When handle is imported at Node B, then the user can reserve an address space and map it locally in a regular fashion:
+当句柄在节点 B 被导入后，用户可以预留地址空间并以常规方式在本地进行映射：
 
 ```c++
 size_t granularity = 0;
@@ -196,7 +196,7 @@ cuMemAddressReserve(&dptr, padded_size, 0, 0, 0);
 cuMemMap(dptr, padded_size, 0, allocHandle, 0);
 ```
 
-As the final step, the user should give appropriate accesses to each of the local GPUs at Node B. An example code snippet that gives read and write access to eight local GPUs:
+最后一步，用户应为节点 B 上的每个本地 GPU 授予适当的访问权限。以下是一个授予八个本地 GPU 读写权限的示例代码片段：
 
 ```c++
 // Give all 8 local Â GPUS access to exported EGM memory located on Node A.                                                               |

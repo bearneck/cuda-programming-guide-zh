@@ -249,7 +249,7 @@ cudaEventDestroy(event);
 cudaStreamDestroy(stream);
 ```
 
-CUDA Events can be checked for completion in a non-blocking way using the `cudaEventQuery()` function. In the example below we launch 2 kernels into a stream. The first kernel, kernel1 generates some data which we would like to copy to the host, however we also have some CPU side work to do. In the code below, we enqueue kernel1 followed by an event (event) and then kernel2 into stream stream1. We then go into a CPU work loop, but occasionally take a peek to see if the event has completed indicating that kernel1 is done. If so, we launch a host to device copy into stream stream2. This approach allows the overlap of the CPU work with the GPU kernel execution and the device to host copy.
+CUDA 事件可以通过 `cudaEventQuery()` 函数以非阻塞方式检查其是否完成。在下面的示例中，我们将两个内核启动到一个流中。第一个内核 kernel1 生成一些我们希望复制到主机的数据，但同时我们也有一些 CPU 端的工作需要处理。在下面的代码中，我们将 kernel1、一个事件（event）以及 kernel2 依次加入流 stream1。然后我们进入一个 CPU 工作循环，但会偶尔检查事件是否已完成，这表示 kernel1 已执行完毕。如果已完成，我们就启动一个从设备到主机的复制操作到流 stream2 中。这种方法允许 CPU 工作与 GPU 内核执行以及设备到主机的复制操作重叠进行。
 
 ```c
 cudaEvent_t event;
@@ -311,7 +311,7 @@ free(h_data);
 
 ## 2.3.4.Callback Functions from Streams
 
-CUDA provides a mechanism for launching functions on the host from within a stream. There are currently two functions available for this purpose: `cudaLaunchHostFunc()` and `cudaAddCallback()`. However, `cudaAddCallback()` is slated for deprecation, so applications should use `cudaLaunchHostFunc()`.
+CUDA 提供了一种在流中从主机启动函数的机制。目前有两个函数可用于此目的：`cudaLaunchHostFunc()` 和 `cudaAddCallback()`。然而，`cudaAddCallback()` 已被计划弃用，因此应用程序应使用 `cudaLaunchHostFunc()`。
 使用 `cudaLaunchHostFunc()`
 
 `cudaLaunchHostFunc()` 函数的签名如下：
@@ -468,34 +468,34 @@ cudaDeviceSynchronize();
 
 ### 2.3.6.2.Per-thread Default Stream
 
-Starting in CUDA-7, CUDA allows for each host thread to have its own independent default stream, rather than the shared legacy default stream. In order to enable this behavior one must either use the nvcc compiler option `--default-stream per-thread` or define the `CUDA_API_PER_THREAD_DEFAULT_STREAM` preprocessor macro. When this behavior is enabled, each host thread will have its own independent default stream which will not synchronize with other streams in the same way the legacy default stream does. In such a situation the [legacy default stream example](#legacy-default-stream-example) will now exhibit the same synchronization behavior as the [non-blocking stream example](#non-blocking-stream-example).
+自 CUDA-7 起，CUDA 允许每个主机线程拥有其独立的默认流，而非共享的传统默认流。要启用此行为，必须使用 nvcc 编译器选项 `--default-stream per-thread` 或定义预处理器宏 `CUDA_API_PER_THREAD_DEFAULT_STREAM`。启用此行为后，每个主机线程将拥有其独立的默认流，该流不会像传统默认流那样与其他流同步。在这种情况下，[传统默认流示例](#legacy-default-stream-example) 将表现出与 [非阻塞流示例](#non-blocking-stream-example) 相同的同步行为。
 
 ## 2.3.7.Explicit Synchronization
 
-There are various ways to explicitly synchronize streams with each other.
+有多种方式可以显式地同步流。
 
-`cudaDeviceSynchronize()` waits until all preceding commands in all streams of all host threads have completed.
+`cudaDeviceSynchronize()` 会等待所有主机线程的所有流中的所有先前命令都执行完毕。
 
-`cudaStreamSynchronize()`takes a stream as a parameter and waits until all preceding commands in the given stream have completed. It can be used to synchronize the host with a specific stream, allowing other streams to continue executing on the device.
+`cudaStreamSynchronize()` 接收一个流作为参数，并等待给定流中所有先前的命令完成。它可用于将主机与特定流同步，同时允许其他流在设备上继续执行。
 
-`cudaStreamWaitEvent()`takes a stream and an event as parameters (see [CUDA Events](#cuda-events) for a description of events)and makes all the commands added to the given stream after the call to `cudaStreamWaitEvent()`delay their execution until the given event has completed.
+`cudaStreamWaitEvent()` 接收一个流和一个事件作为参数（关于事件的描述请参阅 [CUDA 事件](#cuda-events)），并使在调用 `cudaStreamWaitEvent()` 之后添加到给定流中的所有命令延迟执行，直到给定事件完成。
 
-`cudaStreamQuery()`provides applications with a way to know if all preceding commands in a stream have completed.
+`cudaStreamQuery()` 为应用程序提供了一种判断流中所有前置命令是否已完成的方法。
 
 ## 2.3.8.Implicit Synchronization
 
-Two operations from different streams cannot run concurrently if any CUDA operation on the NULL stream is submitted in-between them, unless the streams are non-blocking streams (created with the `cudaStreamNonBlocking` flag).
+如果在这两个操作之间提交了任何针对 NULL 流的 CUDA 操作，那么来自不同流的两个操作将无法并发运行，除非这些流是非阻塞流（使用 `cudaStreamNonBlocking` 标志创建）。
 
-Applications should follow these guidelines to improve their potential for concurrent kernel execution:
+应用程序应遵循以下准则，以提升其并发内核执行的潜力：
 
-- All independent operations should be issued before dependent operations,
-- Synchronization of any kind should be delayed as long as possible.
+- 所有独立操作应在依赖操作之前发出，
+- 任何类型的同步都应尽可能延迟。
 
 ## 2.3.9.Miscellaneous and Advanced topics
 
 ### 2.3.9.1.Stream Prioritization
 
-As mentioned previously, developers can assign priorities to CUDA streams. Prioritized streams need to be created using the `cudaStreamCreateWithPriority()` function. The function takes two parameters: the stream handle and the priority level. The general scheme is that lower numbers correspond to higher priorities. The given priority range for a given device and context can be queried using the `cudaDeviceGetStreamPriorityRange()` function. The default priority of a stream is 0.
+如前所述，开发者可以为 CUDA 流分配优先级。需要使用 `cudaStreamCreateWithPriority()` 函数来创建具有优先级的流。该函数接受两个参数：流句柄和优先级级别。通常的规则是，数值越低对应优先级越高。可以通过 `cudaDeviceGetStreamPriorityRange()` 函数查询给定设备和上下文的可用优先级范围。流的默认优先级为 0。
 
 ```c
 int minPriority, maxPriority;
@@ -512,24 +512,24 @@ cudaStreamCreateWithPriority(&stream1, cudaStreamDefault, minPriority);  // Lowe
 cudaStreamCreateWithPriority(&stream2, cudaStreamDefault, maxPriority);  // Highest priority
 ```
 
-We should note that a priority of a stream is only a hint to the runtime and generally applies primarily to kernel launches, and may not be respected for memory transfers. Stream priorities will not preempt already executing work, or guarantee any specific execution order.
+我们应当注意，流的优先级仅作为对运行时的提示，通常主要适用于内核启动，而对于内存传输可能不被遵循。流优先级不会抢占已执行的工作，也不能保证任何特定的执行顺序。
 
 ### 2.3.9.2.Introduction to CUDA Graphs with Stream Capture
 
-CUDA streams allow programs to specify a sequence of operations, kernels or memory copies, in order. Using multiple streams and cross-stream dependencies with `cudaStreamWaitEvent`, an application can specify a full directed acyclic graph (DAG) of operations. Some applications may have a sequence or DAG of operations that needs to be run many times throughout execution.
+CUDA 流允许程序按顺序指定一系列操作、内核或内存拷贝。通过使用多个流以及结合 `cudaStreamWaitEvent` 的跨流依赖关系，应用程序可以指定一个完整的有向无环图（DAG）操作。某些应用程序可能具有一个需要在整个执行过程中多次运行的操作序列或 DAG。
 
-For this situation, CUDA provides a feature known as CUDA graphs. This section introduces CUDA graphs and one mechanism of creating them called *stream capture*. A more detailed discussion of CUDA graphs is presented in [CUDA Graphs](../04-special-topics/cuda-graphs.html#cuda-graphs). Capturing or creating a graph can help reduce latency and CPU overhead of repeatedly invoking the same chain of API calls from the host thread. Instead, the APIs to specify the graph operations can be called once, and then the resulting graph executed many times.
+针对这种情况，CUDA 提供了一项称为 CUDA 图的功能。本节将介绍 CUDA 图以及一种创建它们的方法，称为*流捕获*。关于 CUDA 图的更详细讨论，请参阅 [CUDA 图](../04-special-topics/cuda-graphs.html#cuda-graphs)。捕获或创建图有助于减少从主机线程重复调用相同 API 调用链所产生的延迟和 CPU 开销。取而代之的是，用于指定图操作的 API 只需调用一次，然后生成的图可以执行多次。
 
 CUDA Graphs work in the following way:
 
-1. The graph is captured by the application. This step is done once the first time the graph is executed. The graph can also be manually composed using the CUDA graph API.
-2. The graph is instantiated . This step is done one time, after the graph is captured. This step can set up all the various runtime structures needed to execute the graph, in order to make launching its components as fast as possible.
-3. In the remaining steps, the pre-instantiated graph is executed as many times as required. Since all the runtime structures needed to execute the graph operations are already in place, the CPU overheads of the graph execution are minimized.
+1. 应用程序捕获图。此步骤在首次执行图时完成一次。图也可以使用 CUDA 图 API 手动组合。
+2. 图被实例化。此步骤在图捕获后执行一次。此步骤可以设置执行图所需的所有各种运行时结构，以便尽可能快地启动其组件。
+3. 在后续步骤中，预实例化的图可根据需要执行任意多次。由于执行图操作所需的所有运行时结构均已就位，图执行的 CPU 开销被降至最低。
 
-Listing 2 
-The stages of capturing, instantiating and executing a simple linear graph using CUDA Graphs (from 
-CUDA Developer Technical Blog
-, A. Gray, 2019)
+清单 2
+使用 CUDA 图捕获、实例化和执行简单线性图的各个阶段（源自 
+CUDA 开发者技术博客
+, A. Gray, 2019）
 #
 
 ```c

@@ -115,9 +115,9 @@ CUDA C++ 编程语言是 C++ 编程语言的扩展。本节记录了当前 [ISO 
 
 ## 5.8.3.CUDA APIs
 
-A CUDA API call shall eventually either return or ensure at least one device thread makes progress.
+一次 CUDA API 调用最终要么返回，要么确保至少有一个设备线程取得进展。
 
-CUDA query functions (e.g. [cudaStreamQuery](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__STREAM.html#group__CUDART__STREAM_1g2021adeb17905c7ec2a3c1bf125c5435), [cudaEventQuery](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html#group__CUDART__EVENT_1g2bf738909b4a059023537eaa29d8a5b7), etc.) shall not consistently return `cudaErrorNotReady` without a device thread making progress.
+CUDA 查询函数（例如 [cudaStreamQuery](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__STREAM.html#group__CUDART__STREAM_1g2021adeb17905c7ec2a3c1bf125c5435)、[cudaEventQuery](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html#group__CUDART__EVENT_1g2bf738909b4a059023537eaa29d8a5b7) 等）不应在设备线程未取得进展的情况下持续返回 `cudaErrorNotReady`。
 
 > [Note: The device thread need not be ârelatedâ to the API call, e.g., an API operating on one stream or process may ensure progress of a device thread on another stream or process. - end note.]
 > [Note: A simple but not sufficient method to test a program for CUDA API Forward Progress conformance is to run them with following environment variables set:
@@ -127,7 +127,7 @@ CUDA query functions (e.g. [cudaStreamQuery](https://docs.nvidia.com/cuda/cuda-r
 > If it does not, the program has a bug.
 > This method is not sufficient because it does not catch all Forward Progress bugs, but it does catch many such bugs. - end note.]
 
-Examples of CUDA API forward progress guarantees.
+CUDA API 前向进度保证示例。
 
 ```cuda
  1// Example: Execution.Model.API.1
@@ -198,7 +198,7 @@ Examples of CUDA API forward progress guarantees.
 
 ### 5.8.3.1.Dependencies
 
-A device thread shall not start until all its dependencies have completed.
+设备线程在其所有依赖项完成之前不得启动。
 
 > [Note: Dependencies that prevent device threads from starting to make progress can be created, for example, via
 > CUDA Stream Commands
@@ -209,7 +209,7 @@ A device thread shall not start until all its dependencies have completed.
 > CUDA Kernels
 > . - end note.]
 
-Examples of CUDA API forward progress guarantees due to dependencies
+由于依赖关系导致的 CUDA API 向前进度保证示例
 
 ```cuda
  1// Example: Execution.Model.Stream.0

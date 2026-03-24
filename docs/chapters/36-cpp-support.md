@@ -421,8 +421,8 @@ __host__ __device__ void free(void* ptr);
 
 以下 API 函数用于获取和设置堆大小：
 
-- cudaDeviceGetLimit(size_t* size, cudaLimitMallocHeapSize)
-- cudaDeviceSetLimit(cudaLimitMallocHeapSize, size_t size)
+- `cudaDeviceGetLimit(size_t* size, cudaLimitMallocHeapSize)`
+- `cudaDeviceSetLimit(cudaLimitMallocHeapSize, size_t size)`
 
 授予的堆大小将至少为 `size` 字节。[cuCtxGetLimit()](https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g9f2d47d1745752aa16da7ed0d111b6a8) 和 [cudaDeviceGetLimit()](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__DEVICE.html#group__CUDART__DEVICE_1g720e159aeb125910c22aa20fe9611ec2) 返回当前请求的堆大小。
 
@@ -1905,9 +1905,9 @@ __host__ void bar() {
 }
 ```
 
-In this case, the implicitly declared constructor function `Derived::Derived()` will be treated as a `__device__` function because it is only invoked from the `__device__` function `foo()`. The implicitly declared constructor function `Other::Other()` will be treated as a `__host__ __device__` function since it is invoked both from both a `__device__` function `foo()` and a `__host__` function `bar()`.
+在这种情况下，隐式声明的构造函数 `Derived::Derived()` 将被视为 `__device__` 函数，因为它仅从 `__device__` 函数 `foo()` 中调用。而隐式声明的构造函数 `Other::Other()` 将被视为 `__host__ __device__` 函数，因为它既从 `__device__` 函数 `foo()` 中调用，也从 `__host__` 函数 `bar()` 中调用。
 
-Additionally, if `F` is an implicitly-declared `virtual` function (for example, a `virtual` destructor), the execution spaces of each virtual function `D` that is overridden by `F` are added to the set of execution spaces for `F` if `D` not implicitly-declared.
+此外，如果 `F` 是一个隐式声明的 `virtual` 函数（例如 `virtual` 析构函数），则每个被 `F` 重写的虚函数 `D` 的执行空间会被添加到 `F` 的执行空间集合中，前提是 `D` 不是隐式声明的。
 
 For example:
 
@@ -1929,10 +1929,10 @@ struct Derived2 : Base2 {}; // implicitly-declared virtual destructor
 
 #### 5.3.9.6.5.Polymorphic Classes
 
-Polymorphic classes, namely those with `virtual` functions, derived from other polymorphic classes, or with polymorphic data members, are subject to the following restrictions:
+多态类，即具有 `virtual` 函数的类、从其他多态类派生的类或具有多态数据成员的类，需遵守以下限制：
 
-- Copying polymorphic objects from device to host or from host to device, including __global__ function arguments is undefined behavior.
-- The execution space of an overridden virtual function must match the execution space of the function in the base class.
+- 将多态对象从设备复制到主机或从主机复制到设备（包括作为 `__global__` 函数参数）是未定义行为。
+- 被重写的虚函数的执行空间必须与基类中该函数的执行空间一致。
 
 Example:
 
@@ -1970,13 +1970,13 @@ See the example on [Compiler Explorer](https://godbolt.org/z/xfKhEGfdG).
 
 #### 5.3.9.6.6.Windows-Specific Class Layout
 
-The CUDA compiler follows the IA64 ABI for class layout, while Microsoft Visual Studio does not. This prevents bitwise copy of special objects between host and device code as described below.
+CUDA 编译器遵循 IA64 ABI 进行类布局，而 Microsoft Visual Studio 则不然。这导致无法在主机和设备代码之间按位复制特殊对象，具体如下所述。
 
-Let `T` denote a pointer to member type, or a class type that satisfies any of the following conditions:
+令 `T` 表示指向成员类型的指针，或满足以下任一条件的类类型：
 
-- T is a polymorphic class
-- T has multiple inheritance with more than one direct or indirect empty base class .
-- All direct and indirect base classes B are empty and the type of the first field F of T uses B in its definition, such that B is laid out at offset 0 in the definition of F .
+-   T 是一个多态类
+-   T 具有多重继承，且包含多个直接或间接的空基类。
+-   所有直接和间接基类 B 均为空类，并且 T 的第一个字段 F 的类型在其定义中使用了 B，导致 B 在 F 的定义中布局在偏移量 0 处。
 当使用 Microsoft Visual Studio 编译时，类型为 `T` 的类、具有类型为 `T` 的基类的类，或具有类型为 `T` 的数据成员的类，在主机和设备之间可能具有不同的类布局和大小。
 
 将此类对象从设备复制到主机或从主机复制到设备（包括 `__global__` 函数参数）是未定义行为。

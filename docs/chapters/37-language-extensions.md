@@ -570,11 +570,11 @@ MyKernel(...) {
 }
 ```
 
-The `maxNumberRegistersPerThread` variable specifies the maximum number of registers to be allocated to a single thread in a thread block of the kernel `MyKernel()`; it compiles to the `.maxnreg` PTX directive.
+`maxNumberRegistersPerThread` 变量指定了在内核 `MyKernel()` 的线程块中分配给单个线程的最大寄存器数量；它会被编译为 `.maxnreg` PTX 指令。
 
-The `__launch_bounds__()` and `__maxnreg__()` qualifiers cannot be applied to the same kernel together.
+`__launch_bounds__()` 和 `__maxnreg__()` 限定符不能同时应用于同一个内核。
 
-The `--maxrregcount <N>` compiler option can be used to control register usage for all `__global__` functions in a file. This option is ignored for kernel functions with the `__maxnreg__` qualifier.
+`--maxrregcount <N>` 编译器选项可用于控制文件中所有 `__global__` 函数的寄存器使用量。对于带有 `__maxnreg__` 限定符的内核函数，此选项将被忽略。
 
 ## 5.4.4.Synchronization Primitives
 
@@ -587,14 +587,14 @@ int  __syncthreads_and(int predicate);
 int  __syncthreads_or(int predicate);
 ```
 
-The intrinsics coordinate communication among threads within the same block. When threads in a block access the same addresses in shared or global memory, read-after-write, write-after-read, or write-after-write hazards can occur. These hazards can be avoided by synchronizing threads between such accesses.
+这些内部函数协调同一线程块内线程之间的通信。当线程块中的线程访问共享内存或全局内存中的相同地址时，可能会出现读后写、写后读或写后写的数据竞争风险。通过在两次此类访问之间同步线程，可以避免这些风险。
 
 The intrinsics have the following semantics:
 
-- __syncthreads*() wait until all non-exited threads in the thread block simultaneously reach the same __syncthreads*() intrinsic call in the program or exit.
-- __syncthreads*() provide memory ordering among participating threads: the call to __syncthreads*() intrinsics strongly happens before (see C++ specification [intro.races] ) any participating thread is unblocked from the wait or exits.
+- __syncthreads*() 会等待线程块中所有未退出的线程同时到达程序中相同的 __syncthreads*() 内置函数调用点或退出。
+- __syncthreads*() 在参与线程之间提供内存排序：对 __syncthreads*() 内置函数的调用强发生于（参见 C++ 规范 [intro.races]）任何参与线程从等待状态解除阻塞或退出之前。
 
-The following example shows how to use `__syncthreads()` to synchronize threads within a thread block and safely sum the elements of an array shared among the threads:
+以下示例展示了如何使用 `__syncthreads()` 来同步线程块内的线程，并安全地对线程间共享的数组元素进行求和：
 
 ```cuda
 // assuming blockDim.x is 128
@@ -618,9 +618,9 @@ __global__ void example_syncthreads(int* input_data, int* output_data) {
 }
 ```
 
-The `__syncthreads*()` intrinsics are permitted in conditional code, but only if the condition evaluates uniformly across the entire thread block. Otherwise, execution may hang or produce unintended side effects.
+`__syncthreads*()` 内在函数允许在条件代码中使用，但前提是该条件在整个线程块内被统一求值。否则，执行可能会挂起或产生意外的副作用。
 
-The following example demonstrates a valid behavior:
+以下示例演示了一种有效的行为：
 
 ```cuda
 // assuming blockDim.x is 128
@@ -1382,14 +1382,14 @@ __device__ T    __nv_atomic_fetch_min(T* address, T val, int order, int scope = 
 __device__ void __nv_atomic_min      (T* address, T val, int order, int scope = __NV_THREAD_SCOPE_SYSTEM);
 ```
 
-The functions perform the following operations in one atomic transaction:
+这些函数在单个原子事务中执行以下操作：
 
-1. Reads the old value located at the address address in global or shared memory.
-2. Computes the minimum of old and val .
-3. Stores the result back to memory at the same address.
+1. 读取位于全局内存或共享内存中地址 `address` 处的旧值。
+2. 计算 `old` 与 `val` 的最小值。
+3. 将结果存储回同一地址的内存中。
 
-- __nv_atomic_fetch_min returns the old value.
-- __nv_atomic_min has no return value.
+- __nv_atomic_fetch_min 返回旧值。
+- __nv_atomic_min 没有返回值。
 
 The functions support the following data types:
 
@@ -1402,14 +1402,14 @@ __device__ T    __nv_atomic_fetch_max(T* address, T val, int order, int scope = 
 __device__ void __nv_atomic_max      (T* address, T val, int order, int scope = __NV_THREAD_SCOPE_SYSTEM);
 ```
 
-The functions perform the following operations in one atomic transaction:
+这些函数在单个原子事务中执行以下操作：
 
-1. Reads the old value located at the address address in global or shared memory.
-2. Computes the maximum of old and val .
-3. Stores the result back to memory at the same address.
+1. 读取位于全局内存或共享内存中地址 `address` 处的旧值。
+2. 计算旧值与 `val` 之间的最大值。
+3. 将结果存储回同一地址的内存中。
 
-- __nv_atomic_fetch_max returns the old value.
-- __nv_atomic_max has no return value.
+- __nv_atomic_fetch_max 返回旧值。
+- __nv_atomic_max 没有返回值。
 
 The functions support the following data types:
 
@@ -1422,18 +1422,18 @@ __device__ T    __nv_atomic_exchange_n(T* address, T val,          int order, in
 __device__ void __nv_atomic_exchange  (T* address, T* val, T* ret, int order, int scope = __NV_THREAD_SCOPE_SYSTEM);
 ```
 
-The functions perform the following operations in one atomic transaction:
+这些函数在单个原子事务中执行以下操作：
 
-1. Reads the old value located at the address address in global or shared memory.
-2. __nv_atomic_exchange_n stores val to where address points to. __nv_atomic_exchange stores old to where ret points to and stores the value located at the address val to where address points to.
+1. 读取位于全局内存或共享内存中地址 `address` 处的旧值。
+2. `__nv_atomic_exchange_n` 将 `val` 存储到 `address` 所指向的位置。`__nv_atomic_exchange` 将旧值存储到 `ret` 所指向的位置，并将位于地址 `val` 处的值存储到 `address` 所指向的位置。
 
-- __nv_atomic_exchange_n returns the old value.
-- __nv_atomic_exchange has no return value.
+- __nv_atomic_exchange_n 返回旧值。
+- __nv_atomic_exchange 没有返回值。
 
 The functions support the following data types:
 
-- Any data type of size of 4, 8 or 16 bytes.
-- The 16-byte data type is supported on devices of compute capability 9.x and higher.
+- 任何大小为 4、8 或 16 字节的数据类型。
+- 16 字节数据类型在计算能力 9.x 及更高的设备上受支持。
 
 #### 5.4.5.2.9.__nv_atomic_compare_exchange(),__nv_atomic_compare_exchange_n()
 
@@ -1445,7 +1445,7 @@ __device__ bool __nv_atomic_compare_exchange_n(T* address, T* expected, T desire
                                                int scope = __NV_THREAD_SCOPE_SYSTEM);
 ```
 
-The functions perform the following operations in one atomic transaction:
+这些函数在单个原子事务中执行以下操作：
 
 1. Reads the old value located at the address address in global or shared memory.
 2. 将旧值与 `expected` 所指向的值进行比较。
@@ -1726,9 +1726,9 @@ __shfl_sync(0xFFFFFFFF, value, 0, /*width=*/31);
 ```
 
 !!! warning "Warning"
-    These intrinsics do not imply a memory barrier. They do not guarantee any memory ordering.
+这些内建函数不隐含内存屏障。它们不保证任何内存顺序。
 
-Example 1: Broadcast of a single value across a warp
+示例 1：在线程束内广播单个值
 
 **CUDA C++**
 
@@ -1777,10 +1777,10 @@ int main() {
 
 See the example on [Compiler Explorer](https://cuda.godbolt.org/z/E3E3Y5e4e).
 
-Example 2: Inclusive plus-scan across sub-partitions of 8 threads
+示例 2：跨 8 个线程的子分区进行包含式加法扫描
 
 !!! note "Hint"
-    It is suggested to use the cub::WarpScan function for efficient and generalized warp scan functions.
+建议使用 `cub::WarpScan` 函数来实现高效且通用的线程束扫描功能。
 
 **CUDA C++**
 
@@ -2096,23 +2096,23 @@ nvcc -arch=sm_80 a.o b.o
 nvcc --generate-code arch=compute_100a,code=sm_100a prog.cu
 ```
 
-- __CUDA_ARCH__ == 1000 .
-- __CUDA_ARCH_SPECIFIC__ == 1000 .
-- __CUDA_ARCH_FAMILY_SPECIFIC__ == 1000 .
+- __CUDA_ARCH__ == 1000。
+- __CUDA_ARCH_SPECIFIC__ == 1000。
+- __CUDA_ARCH_FAMILY_SPECIFIC__ == 1000。
 
 ```bash
 nvcc --generate-code arch=compute_100f,code=sm_103f prog.cu
 ```
 
-- __CUDA_ARCH__ == 1000 .
-- __CUDA_ARCH_FAMILY_SPECIFIC__ == 1000 .
-- __CUDA_ARCH_SPECIFIC__ 未定义。
+-   __CUDA_ARCH__ == 1000。
+-   __CUDA_ARCH_FAMILY_SPECIFIC__ == 1000。
+-   __CUDA_ARCH_SPECIFIC__ 未定义。
 
 ```bash
 nvcc -arch=sm_100 prog.cu
 ```
 
-- __CUDA_ARCH__ == 1000 .
+- __CUDA_ARCH__ == 1000。
 - __CUDA_ARCH_FAMILY_SPECIFIC__ 未定义。
 - __CUDA_ARCH_SPECIFIC__ 未定义。
 
@@ -2204,14 +2204,14 @@ asm volatile("ld.shared.s32 %0, [%1];" : "=r"(output) : "l"(smem_ptr) : "memory"
 assert(output == 42);
 ```
 
-A common optimization that exploits these address representations is reducing data structure size by leveraging the fact that the address ranges of shared, local, and constant spaces are smaller than 32 bits, which allows storing 32-bit addresses instead of 64-bit pointers and save registers. Additionally, 32-bit arithmetic is faster than 64-bit arithmetic. To obtain the 32-bit integer representation of these addresses, truncate the 64-bit value to 32 bits by casting from an unsigned 64-bit integer to an unsigned 32-bit integer:
+一种常见的优化手段是利用这些地址表示方式来减小数据结构的大小，其原理在于共享内存、局部内存和常量内存空间的地址范围小于 32 位，这使得我们可以存储 32 位地址而非 64 位指针，从而节省寄存器。此外，32 位算术运算比 64 位运算更快。要获取这些地址的 32 位整数表示，只需将 64 位值截断为 32 位，即从无符号 64 位整数强制转换为无符号 32 位整数：
 
 ```cuda
 __shared__ int smem_var;
 uint32_t       smem_ptr_32bit = static_cast<uint32_t>(__cvta_generic_to_shared(&smem_var));
 ```
 
-To recover a generic address from such a 32-bit representation, zero-extend the address back to an unsigned 64-bit integer and then call the corresponding address space conversion function:
+要从这样的 32 位表示中恢复通用地址，请先将地址零扩展为无符号 64 位整数，然后调用相应的地址空间转换函数：
 
 ```cuda
 size_t smem_ptr_64bit = static_cast<size_t>(smem_ptr_32bit); // zero-extend to 64 bits
@@ -2227,7 +2227,7 @@ assert(generic_ptr == &smem_var);
 T __ldg(const T* address);
 ```
 
-The function `__ldg()` performs a read-only L1/Tex cache load. It supports all C++ fundamental types, CUDA vector types (except x3 components), and extended floating-point types, such as `__half`, `__half2`, `__nv_bfloat16`, and `__nv_bfloat162`.
+函数 `__ldg()` 执行只读的 L1/Tex 缓存加载。它支持所有 C++ 基础类型、CUDA 向量类型（除了 x3 分量）以及扩展浮点类型，例如 `__half`、`__half2`、`__nv_bfloat16` 和 `__nv_bfloat162`。
 
 ---
 
@@ -2239,7 +2239,7 @@ T __ldlu(const T* address);
 T __ldcv(const T* address);
 ```
 
-The functions perform a load using the cache operator specified in the [PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#cache-operators) guide. They support all C++ fundamental types, CUDA vector types (except x3 components), and extended floating-point types, such as `__half`, `__half2`, `__nv_bfloat16`, and `__nv_bfloat162`.
+这些函数使用 [PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#cache-operators) 指南中指定的缓存操作符执行加载操作。它们支持所有 C++ 基础类型、CUDA 向量类型（除了 x3 分量）以及扩展浮点类型，例如 `__half`、`__half2`、`__nv_bfloat16` 和 `__nv_bfloat162`。
 
 ---
 
@@ -2250,20 +2250,20 @@ void __stcs(T* address, T value);
 void __stwt(T* address, T value);
 ```
 
-The functions perform a store using the cache operator specified in the [PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#cache-operators) guide. They support all C++ fundamental types, CUDA vector types (except x3 components), and extended floating-point types, such as `__half`, `__half2`, `__nv_bfloat16`, and `__nv_bfloat162`.
+这些函数使用 [PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#cache-operators) 指南中指定的缓存操作符执行存储操作。它们支持所有 C++ 基础类型、CUDA 向量类型（除了 x3 分量）以及扩展浮点类型，例如 `__half`、`__half2`、`__nv_bfloat16` 和 `__nv_bfloat162`。
 
 ### 5.4.8.4.__trap()
 
 !!! note "Hint"
-    It is suggested to use the cuda::std::terminate() function provided by libcu++ ( C++ reference ) as a portable alternative to __trap() .
+建议使用 libcu++（C++ 参考）提供的 cuda::std::terminate() 函数作为 __trap() 的可移植替代方案。
 
-A trap operation can be initiated by calling the `__trap()` function from any device thread.
+陷阱操作可以通过从任意设备线程调用 `__trap()` 函数来发起。
 
 ```cuda
 void __trap();
 ```
 
-Execution of the kernel is aborted, raising an interrupt in the host program. Calling `__trap()` results in a corrupted CUDA context, causing subsequent CUDA calls and kernel invocations to fail.
+内核执行被中止，并在主机程序中引发中断。调用 `__trap()` 会导致 CUDA 上下文损坏，致使后续的 CUDA 调用和内核启动失败。
 ### 5.4.8.5.__nanosleep()
 
 ```cuda
@@ -2878,7 +2878,7 @@ T -> T  // 所有其他类型
 对于亚字节操作，`load_matrix_sync` 中的 `ldm` 值对于元素类型 `experimental::precision::u4` 和 `experimental::precision::s4` 应为 32 的倍数，对于元素类型 `experimental::precision::b1` 应为 128 的倍数（即，在两种情况下都是 16 字节的倍数）。
 
 !!! note "注意"
-    对 MMA 指令的以下变体的支持已被弃用，并将在 sm_90 中移除：experimental::precision::u4 experimental::precision::s4 experimental::precision::b1，且 bmmaBitOp 设置为 bmmaBitOpXOR。
+对 MMA 指令的以下变体的支持已被弃用，并将在 sm_90 中移除：experimental::precision::u4 experimental::precision::s4 experimental::precision::b1，且 bmmaBitOp 设置为 bmmaBitOpXOR。
 `bmma_sync`
 
 等待所有线程束通道都执行完 `bmma_sync` 后，执行线程束同步的位矩阵乘累加操作 `D = (A op B) + C`，其中 `op` 包含一个逻辑操作 `bmmaBitOp` 和由 `bmmaAccumulateOp` 定义的累加操作。可用的操作有：

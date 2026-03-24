@@ -60,11 +60,11 @@ PFN_cuMemAlloc pfn_cuMemAlloc;
 
 ## 4.20.3.Driver Function Retrieval
 
-Using the Driver Entry Point Access APIs and the appropriate typedef, we can get the function pointer to any CUDA driver API.
+使用驱动程序入口点访问 API 和适当的类型定义，我们可以获取任何 CUDA 驱动程序 API 的函数指针。
 
 ### 4.20.3.1.Using the Driver API
 
-The driver API requires CUDA version as an argument to get the ABI compatible version for the requested driver symbol. CUDA Driver APIs have a per-function ABI denoted with a `_v*` extension. For example, consider the versions of `cuStreamBeginCapture` and their corresponding `typedefs` from `cudaTypedefs.h`:
+驱动程序 API 需要 CUDA 版本作为参数，以获取与请求的驱动程序符号 ABI 兼容的版本。CUDA 驱动程序 API 具有每个函数的 ABI，通过 `_v*` 扩展名表示。例如，考虑 `cuStreamBeginCapture` 的版本及其在 `cudaTypedefs.h` 中对应的 `typedef`：
 
 ```c++
 // cuda.h
@@ -76,7 +76,7 @@ typedef CUresult (CUDAAPI *PFN_cuStreamBeginCapture_v10000)(CUstream hStream);
 typedef CUresult (CUDAAPI *PFN_cuStreamBeginCapture_v10010)(CUstream hStream, CUstreamCaptureMode mode);
 ```
 
-From the above `typedefs` in the code snippet, version suffixes `_v10000` and `_v10010` indicate that the above APIs were introduced in CUDA 10.0 and CUDA 10.1 respectively.
+从上述代码片段中的 `typedefs` 可知，版本后缀 `_v10000` 和 `_v10010` 表明上述 API 分别是在 CUDA 10.0 和 CUDA 10.1 中引入的。
 
 ```c++
 #include <cudaTypedefs.h>
@@ -91,9 +91,9 @@ cuGetProcAddress("cuStreamBeginCapture", &pfn_cuStreamBeginCapture_v1, 10000, CU
 cuGetProcAddress("cuStreamBeginCapture", &pfn_cuStreamBeginCapture_v2, 10010, CU_GET_PROC_ADDRESS_DEFAULT, &driverStatus);
 ```
 
-Referring to the code snippet above, to retrieve the address to the `_v1` version of the driver API `cuStreamBeginCapture`, the CUDA version argument should be exactly 10.0 (10000). Similarly, the CUDA version for retrieving the address to the `_v2` version of the API should be 10.1 (10010). Specifying a higher CUDA version for retrieving a specific version of a driver API might not always be portable. For example, using 11030 here would still return the `_v2` symbol, but if a hypothetical `_v3` version is released in CUDA 11.3, the `cuGetProcAddress` API would start returning the newer `_v3` symbol instead when paired with a CUDA 11.3 driver. Since the ABI and function signatures of the `_v2` and `_v3` symbols might differ, calling the `_v3` function using the `_v10010` typedef intended for the `_v2` symbol would exhibit undefined behavior.
+参考上面的代码片段，要获取驱动程序 API `cuStreamBeginCapture` 的 `_v1` 版本地址，CUDA 版本参数应精确指定为 10.0（10000）。类似地，获取该 API 的 `_v2` 版本地址时，CUDA 版本应指定为 10.1（10010）。为获取特定版本的驱动程序 API 而指定更高的 CUDA 版本可能不具备完全的可移植性。例如，此处使用 11030 仍会返回 `_v2` 符号，但若 CUDA 11.3 中发布了假设的 `_v3` 版本，当搭配 CUDA 11.3 驱动程序时，`cuGetProcAddress` API 将开始返回新的 `_v3` 符号。由于 `_v2` 与 `_v3` 符号的 ABI 和函数签名可能存在差异，若使用为 `_v2` 符号定义的 `_v10010` 类型别名来调用 `_v3` 函数，将导致未定义行为。
 
-To retrieve the latest version of a driver API for a given CUDA Toolkit, we can also specify CUDA_VERSION as the `version` argument and use the unversioned typedef to define the function pointer. Since `_v2` is the latest version of the driver API `cuStreamBeginCapture` in CUDA 11.3, the below code snippet shows a different method to retrieve it.
+要获取给定 CUDA 工具包中驱动程序 API 的最新版本，我们还可以将 CUDA_VERSION 指定为 `version` 参数，并使用未版本化的类型定义来定义函数指针。由于 `_v2` 是 CUDA 11.3 中驱动程序 API `cuStreamBeginCapture` 的最新版本，以下代码片段展示了另一种检索该函数的方法。
 
 ```c++
 // Assuming we are using CUDA 11.3 Toolkit

@@ -108,13 +108,13 @@ Full code can be found in the `vectorAddDrv` CUDA sample.
 
 ## 3.3.1.Context
 
-A CUDA context is analogous to a CPU process. All resources and actions performed within the driver API are encapsulated inside a CUDA context, and the system automatically cleans up these resources when the context is destroyed. Besides objects such as modules and texture or surface references, each context has its own distinct address space. As a result, `CUdeviceptr` values from different contexts reference different memory locations.
+CUDA 上下文类似于 CPU 进程。在驱动程序 API 中执行的所有资源和操作都封装在一个 CUDA 上下文内，当上下文被销毁时，系统会自动清理这些资源。除了模块以及纹理或表面引用等对象外，每个上下文都有其独立的地址空间。因此，来自不同上下文的 `CUdeviceptr` 值指向不同的内存位置。
 
-A host thread may have only one device context current at a time. When a context is created with `cuCtxCreate()`, it is made current to the calling host thread. CUDA functions that operate in a context (most functions that do not involve device enumeration or context management) will return `CUDA_ERROR_INVALID_CONTEXT` if a valid context is not current to the thread.
+主机线程在同一时刻只能有一个设备上下文处于当前状态。当通过 `cuCtxCreate()` 创建上下文时，该上下文会被设置为调用主机线程的当前上下文。在上下文中运行的 CUDA 函数（大多数不涉及设备枚举或上下文管理的函数）如果在线程中没有有效的当前上下文，将返回 `CUDA_ERROR_INVALID_CONTEXT`。
 
-Each host thread has a stack of current contexts. `cuCtxCreate()` pushes the new context onto the top of the stack. `cuCtxPopCurrent()` may be called to detach the context from the host thread. The context is then âfloatingâ and may be pushed as the current context for any host thread. `cuCtxPopCurrent()` also restores the previous current context, if any.
+每个主机线程都维护一个当前上下文栈。`cuCtxCreate()` 会将新创建的上下文压入栈顶。可以调用 `cuCtxPopCurrent()` 来将上下文与主机线程分离。此后该上下文将处于“游离”状态，并可被压入任何主机线程作为其当前上下文。`cuCtxPopCurrent()` 还会恢复之前的当前上下文（如果存在）。
 
-A usage count is also maintained for each context. `cuCtxCreate()` creates a context with a usage count of 1. `cuCtxAttach()` increments the usage count and `cuCtxDetach()` decrements it. A context is destroyed when the usage count goes to 0 when calling `cuCtxDetach()` or `cuCtxDestroy()`.
+每个上下文还维护一个使用计数。`cuCtxCreate()` 创建一个使用计数为 1 的上下文。`cuCtxAttach()` 会增加使用计数，而 `cuCtxDetach()` 会减少它。当调用 `cuCtxDetach()` 或 `cuCtxDestroy()` 导致使用计数变为 0 时，上下文将被销毁。
 驱动程序 API 与运行时 API 可互操作，并且可以通过 `cuDevicePrimaryCtxRetain()` 从驱动程序 API 访问由运行时管理的主上下文（参见[运行时初始化](../02-basics/intro-to-cuda-cpp.html#intro-cpp-runtime-initialization)）。
 
 使用计数有助于在同一上下文中运行的第三方代码之间的互操作性。例如，如果三个库被加载以使用同一上下文，则每个库在开始使用上下文时会调用 `cuCtxAttach()` 来增加使用计数，在库使用完上下文时会调用 `cuCtxDetach()` 来减少使用计数。对于大多数库，期望应用程序在加载或初始化库之前已创建上下文；这样，应用程序可以使用自己的启发式方法创建上下文，而库只需在提供给它的上下文上操作。希望创建自己上下文的库——其 API 客户端可能已创建也可能未创建自己的上下文，而客户端对此不知情——将使用 `cuCtxPushCurrent()` 和 `cuCtxPopCurrent()`，如下图所示。

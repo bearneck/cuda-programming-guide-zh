@@ -70,13 +70,13 @@ int main()
 }
 ```
 
-There are two `cudaLaunchAttribute` types which are relevant to thread block clusters clusters:  `cudaLaunchAttributeClusterDimension` and `cudaLaunchAttributePreferredClusterDimension`.
+有两个与线程块集群相关的 `cudaLaunchAttribute` 类型：`cudaLaunchAttributeClusterDimension` 和 `cudaLaunchAttributePreferredClusterDimension`。
 
-The attribute id `cudaLaunchAttributeClusterDimension` specifies the required dimensions with which to execute the cluster. The value for this attribute, `clusterDim`, is a 3-dimensional value. The corresponding dimensions of the grid (x, y, and z) must be divisible by the respective dimensions of the specified cluster dimension. Setting this is similar to using the  `__cluster_dims__` attribute on the kernel definition at compile time as shown in [Launching with Clusters in Triple Chevron Notation](../02-basics/intro-to-cuda-cpp.html#intro-cpp-launching-cluster-triple-chevron), but can be changed at runtime for different launches of the same kernel.
+属性 `cudaLaunchAttributeClusterDimension` 指定执行集群所需的维度。此属性的值 `clusterDim` 是一个三维值。网格的对应维度（x、y 和 z）必须能被指定集群维度的相应维度整除。设置此属性类似于在编译时在内核定义上使用 `__cluster_dims__` 属性，如[使用三重尖括号表示法启动集群](../02-basics/intro-to-cuda-cpp.html#intro-cpp-launching-cluster-triple-chevron)中所示，但可以在运行时针对同一内核的不同启动进行更改。
 
-On GPUs with compute capability of 10.0 and higher, another attribute id `cudaLaunchAttributePreferredClusterDimension` allows the application to additionally specify a preferred dimension for the cluster. The preferred dimension must be an integer multiple of the minimum cluster dimensions specified by the `__cluster_dims__` attribute on the kernel or the `cudaLaunchAttributeClusterDimension` attribute to `cudaLaunchKernelEx`. That is, a minimum cluster dimension must be specified in addition to the preferred cluster dimension. The corresponding dimensions of the grid (x, y, and z) must be divisible by the respective dimension of the specified preferred cluster dimension.
+在计算能力为 10.0 及更高的 GPU 上，另一个属性 ID `cudaLaunchAttributePreferredClusterDimension` 允许应用程序额外指定集群的首选维度。该首选维度必须是内核上 `__cluster_dims__` 属性或 `cudaLaunchKernelEx` 的 `cudaLaunchAttributeClusterDimension` 属性所指定的最小集群维度的整数倍。也就是说，除了首选集群维度外，还必须指定一个最小集群维度。网格的相应维度（x、y 和 z）必须能被指定的首选集群维度的各自维度整除。
 
-All thread blocks will execute in clusters of at least the minimum cluster dimension. Where possible, clusters of the preferred dimension will be used, but not all clusters are guaranteed to execute with the preferred dimensions. All thread blocks will execute in clusters with either the minimum or preferred cluster dimension. Kernels which use a preferred cluster dimension must be written to operate correctly in either the minimum or the preferred cluster dimension.
+所有线程块都将以至少为最小集群维度的集群形式执行。在可能的情况下，将使用首选维度的集群，但并非所有集群都能保证以首选维度执行。所有线程块都将以最小或首选集群维度执行。使用首选集群维度的内核必须编写为能够在最小或首选集群维度下正确运行。
 ### 3.1.2.2. 将线程块作为集群
 
 当使用 `__cluster_dims__` 注解定义内核时，网格中的集群数量是隐式的，可以通过将网格大小除以指定的集群大小来计算。

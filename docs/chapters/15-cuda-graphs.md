@@ -152,25 +152,25 @@ cudaStreamEndCapture(stream1, &graph);
 // stream1 and stream2 no longer in capture mode
 ```
 
-The graph returned by the above code is shown in [Figure 22](#cuda-graphs-creating-a-graph-using-api-fig-creating-using-graph-apis).
+上述代码返回的图如[图 22](#cuda-graphs-creating-a-graph-using-api-fig-creating-using-graph-apis) 所示。
 
 !!! note "Note"
     When a stream is taken out of capture mode, the next non-captured item in the stream (if any) will still have a dependency on the most recent prior non-captured item, despite intermediate items having been removed.
 
 ##### 4.2.2.1.2.2.Prohibited and Unhandled Operations
 
-It is invalid to synchronize or query the execution status of a stream which is being captured or a captured event, because they do not represent items scheduled for execution. It is also invalid to query the execution status of or synchronize a broader handle which encompasses an active stream capture, such as a device or context handle when any associated stream is in capture mode.
+在捕获流或捕获事件时，对其进行同步或查询执行状态是无效的，因为它们不代表已调度执行的项目。同样，查询包含活动流捕获的更广泛句柄（例如，当任何关联流处于捕获模式时的设备或上下文句柄）的执行状态或对其进行同步也是无效的。
 
-When any stream in the same context is being captured, and it was not created with `cudaStreamNonBlocking`, any attempted use of the legacy stream is invalid. This is because the legacy stream handle at all times encompasses these other streams; enqueueing to the legacy stream would create a dependency on the streams being captured, and querying it or synchronizing it would query or synchronize the streams being captured.
+在同一上下文中，当任何流处于捕获状态且该流并非使用 `cudaStreamNonBlocking` 创建时，任何尝试使用传统流（legacy stream）的操作均属无效。这是因为传统流句柄始终包含这些其他流；向传统流提交任务会创建对正在捕获的流的依赖，而查询或同步传统流将等同于查询或同步正在捕获的流。
 
-It is therefore also invalid to call synchronous APIs in this case. One example of a synchronous APIs is `cudaMemcpy()` which enqueues work to the legacy stream and synchronizes on it before returning.
+因此，在这种情况下调用同步 API 也是无效的。同步 API 的一个例子是 `cudaMemcpy()`，它会将工作排入传统流（legacy stream），并在返回前在该流上执行同步。
 
 !!! note "Note"
     As a general rule, when a dependency relation would connect something that is captured with something that was not captured and instead enqueued for execution, CUDA prefers to return an error rather than ignore the dependency. An exception is made for placing a stream into or out of capture mode; this severs a dependency relation between items added to the stream immediately before and after the mode transition.
 
-It is invalid to merge two separate capture graphs by waiting on a captured event from a stream which is being captured and is associated with a different capture graph than the event. It is invalid to wait on a non-captured event from a stream which is being captured without specifying the `cudaEventWaitExternal` flag.
+将来自正在捕获的流中的捕获事件与来自不同捕获图的事件进行等待，从而合并两个独立的捕获图是无效的。在未指定 `cudaEventWaitExternal` 标志的情况下，从正在捕获的流中等待一个非捕获事件也是无效的。
 
-A small number of APIs that enqueue asynchronous operations into streams are not currently supported in graphs and will return an error if called with a stream which is being captured, such as `cudaStreamAttachMemAsync()`.
+目前，图形不支持少数将异步操作排入流的 API，如果使用正在捕获的流调用这些 API（例如 `cudaStreamAttachMemAsync()`），将返回错误。
 
 ##### 4.2.2.1.2.3.Invalidation
 在流捕获期间尝试无效操作时，任何关联的捕获图都将*失效*。当捕获图失效后，继续使用任何正在捕获的流或与该图关联的捕获事件都是无效的，并将返回错误，直到通过 `cudaStreamEndCapture()` 结束流捕获。此调用将使关联的流退出捕获模式，但也会返回错误值和 NULL 图。
@@ -933,14 +933,14 @@ cudaStreamEndCapture(stream1, &graph);
 
 #### 4.2.5.2.3.Accessing and Freeing Graph Memory Outside of the Allocating Graph
 
-Graph allocations do not have to be freed by the allocating graph. When a graph does not free an allocation, that allocation persists beyond the execution of the graph and can be accessed by subsequent CUDA operations. These allocations may be accessed in another graph or directly using a stream operation as long as the accessing operation is ordered after the allocation through CUDA events and other stream ordering mechanisms. An allocation may subsequently be freed by regular calls to `cudaFree`, `cudaFreeAsync`, or by the launch of another graph with a corresponding free node, or a subsequent launch of the allocating graph (if it was instantiated with the [graph-memory-nodes-cudagraphinstantiateflagautofreeonlaunch](#cuda-graphs-graph-memory-nodes-cudagraphinstantiateflagautofreeonlaunch) flag). It is illegal to access memory after it has been freed - the free operation must be ordered after all operations accessing the memory using graph dependencies, CUDA events, and other stream ordering mechanisms.
+图分配的内存不必由分配它的图来释放。当图不释放某个分配时，该分配会在图执行结束后持续存在，并可供后续的 CUDA 操作访问。只要访问操作通过 CUDA 事件和其他流排序机制被安排在分配操作之后，这些分配就可以在另一个图中被访问，或直接通过流操作访问。随后，可以通过常规调用 `cudaFree`、`cudaFreeAsync`，或通过启动另一个包含相应释放节点的图，或通过重新启动分配图（如果它是使用 [graph-memory-nodes-cudagraphinstantiateflagautofreeonlaunch](#cuda-graphs-graph-memory-nodes-cudagraphinstantiateflagautofreeonlaunch) 标志实例化的）来释放该分配。在内存被释放后访问它是非法的——释放操作必须通过图依赖关系、CUDA 事件和其他流排序机制，被安排在所有访问该内存的操作之后。
 
 !!! note "Note"
     Since graph allocations may share underlying physical memory, free operations must be ordered after all device operations complete. Out-of-band synchronization (such as memory-based synchronization within a compute kernel) is insufficient for ordering between memory writes and free operations. For more information, see the Virtual Aliasing Support rules relating to consistency and coherency.
 
-The three following code snippets demonstrate accessing graph allocations outside of the allocating graph with ordering properly established by: using a single stream, using events between streams, and using events baked into the allocating and freeing graph.
+以下三个代码片段演示了如何在分配图之外访问图分配的内存，并通过以下方式正确建立执行顺序：使用单个流、在流之间使用事件，以及使用嵌入到分配和释放图中的事件。
 
-First, ordering established by using a single stream:
+首先，通过使用单个流建立的顺序：
 
 ```cuda
 // Contents of allocating graph
@@ -1234,7 +1234,7 @@ cudaGraphAddNode(&allocNode, graph, NULL, NULL, 0, &allocNodeParams);
 
 #### 4.2.5.6.2.Peer Access with Stream Capture
 
-For stream capture, the allocation node records the peer accessibility of the allocating pool at the time of the capture. Altering the peer accessibility of the allocating pool after a `cudaMallocFromPoolAsync` call is captured does not affect the mappings that the graph will make for the allocation.
+对于流捕获，分配节点会记录捕获时分配池的对等可访问性。在捕获 `cudaMallocFromPoolAsync` 调用后，更改分配池的对等可访问性不会影响该图将为该分配建立的映射关系。
 
 ```cuda
 // boilerplate for the access descs (only ReadWrite and Device access supported by the add node api)
@@ -1260,10 +1260,10 @@ cudaStreamEndCapture(stream, &graph2);
 
 ## 4.2.6.Device Graph Launch
 
-There are many workflows which need to make data-dependent decisions during runtime and execute different operations depending on those decisions. Rather than offloading this decision-making process to the host, which may require a round-trip from the device, users may prefer to perform it on the device. To that end, CUDA provides a mechanism to launch graphs from the device.
+许多工作流需要在运行时根据数据做出决策，并依据这些决策执行不同的操作。与其将这一决策过程卸载到主机（这可能需要设备与主机之间的往返通信），用户可能更倾向于在设备上执行此过程。为此，CUDA 提供了一种从设备启动图的机制。
 
-Device graph launch provides a convenient way to perform dynamic control flow from the device, be it something as simple as a loop or as complex as a device-side work scheduler.
-此后，可以从设备启动的图将被称为设备图，而不能从设备启动的图将被称为主机图。
+设备图启动提供了一种便捷的方式，用于从设备执行动态控制流，无论是简单的循环还是复杂的设备端工作调度器。
+此后，可以从设备启动的图将被称为**设备图**，而不能从设备启动的图将被称为**主机图**。
 
 设备图既可以从主机启动，也可以从设备启动，而主机图只能从主机启动。与主机启动不同，如果从设备启动一个设备图时，该图的上一次启动仍在运行，将会导致错误，返回 `cudaErrorInvalidValue`；因此，一个设备图不能同时从设备启动两次。同时从主机和设备启动一个设备图将导致未定义行为。
 

@@ -434,7 +434,7 @@ CUresult result = cuMemMap(ptr, size, 0, allocHandle, 0);
 
 ### 4.16.3.4.Access Rights
 
-CUDAâs virtual memory management APIs enable applications to explicitly protect their VA ranges with access control mechanisms. Mapping the allocation to a region of the address range using `cuMemMap` does not make the address accessible, and would result in a program crash if accessed by a CUDA kernel. Users must specifically select access control using the `cuMemSetAccess` function on source and accessing devices. This allows or restricts access for specific devices to a mapped  address range. The following code snippet illustrates the usage for the function:
+CUDA 的虚拟内存管理 API 使应用程序能够通过访问控制机制显式地保护其虚拟地址范围。使用 `cuMemMap` 将分配映射到地址范围的某个区域并不会使该地址可访问，如果被 CUDA 内核访问，将导致程序崩溃。用户必须在源设备和访问设备上使用 `cuMemSetAccess` 函数专门选择访问控制。这允许或限制特定设备对映射地址范围的访问。以下代码片段展示了该函数的用法：
 
 ```c++
 void setAccessOnDevice(int device, CUdeviceptr ptr, size_t size) {
@@ -448,13 +448,13 @@ void setAccessOnDevice(int device, CUdeviceptr ptr, size_t size) {
 }
 ```
 
-The access control mechanism exposed with VMM allows users to be explicit about which allocations they want to share with other peer devices on the system. As specified earlier, `cudaEnablePeerAccess` forces all prior and future allocations made with `cudaMalloc` to be mapped to the target peer device. This can be convenient in many cases as user doesnât have to worry about tracking the mapping state of every allocation to every device in the system. But this approach [has performance implications](https://devblogs.nvidia.com/introducing-low-level-gpu-virtual-memory-management/). With access control at allocation granularity, VMM allows peer mappings with minimal overhead.
+通过 VMM 暴露的访问控制机制允许用户明确指定他们希望与系统中其他对等设备共享哪些分配。如前所述，`cudaEnablePeerAccess` 会强制将所有先前及未来通过 `cudaMalloc` 进行的分配映射到目标对等设备。这在许多情况下可能很方便，因为用户无需担心跟踪系统中每个分配到每个设备的映射状态。但这种方法[存在性能影响](https://devblogs.nvidia.com/introducing-low-level-gpu-virtual-memory-management/)。通过以分配粒度进行访问控制，VMM 允许以最小的开销建立对等映射。
 
-The `vectorAddMMAP`[sample](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/0_Introduction/vectorAddMMAP) can be used as an example for using the Virtual Memory Management APIs.
+`vectorAddMMAP`[示例](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/0_Introduction/vectorAddMMAP) 可作为使用虚拟内存管理 API 的范例。
 
 ### 4.16.3.5.Releasing the Memory
 
-To release the allocated memory and address space, both the source and target processes should use cuMemUnmap, cuMemRelease, and cuMemAddressFree functions in that order. The cuMemUnmap function un-maps a previously mapped memory region from an address range, effectively detaching the physical memory from the reserved virtual address space. Next, cuMemRelease deallocates the physical memory that was previously created, returning it to the system. Finally, cuMemAddressFree frees a virtual address range that was previously reserved, making it available for future use. This specific order ensures a clean and complete deallocation of both the physical memory and the virtual address space.
+要释放已分配的内存和地址空间，源进程和目标进程都应按顺序使用 `cuMemUnmap`、`cuMemRelease` 和 `cuMemAddressFree` 函数。`cuMemUnmap` 函数将先前映射的内存区域从地址范围中解除映射，从而有效地将物理内存与保留的虚拟地址空间分离。接着，`cuMemRelease` 会释放先前创建的物理内存，将其归还给系统。最后，`cuMemAddressFree` 会释放先前保留的虚拟地址范围，使其可供将来使用。这个特定的顺序确保了物理内存和虚拟地址空间都能被干净、完整地释放。
 
 ```c++
 cuMemUnmap(ptr, size);
@@ -634,7 +634,7 @@ cudaMemcpyAsync(output, B, size, stream3);  // Both launches of foo2 and
                                             // to complete before proceeding
 ```
 
-If accessing same allocation through different âproxiesâ is required in the same kernel, a `fence.proxy.alias` can be used between the two accesses. The above example can thus be made legal with inline PTX assembly:
+如果需要在同一内核中通过不同的“代理”访问同一分配，可以在两次访问之间使用 `fence.proxy.alias`。因此，通过内联 PTX 汇编，上述示例可以变得合法：
 
 ```c++
 __global__ void foo(char *A, char *B) {
@@ -646,9 +646,9 @@ __global__ void foo(char *A, char *B) {
 
 ### 4.16.5.4.OS-Specific Handle Details for IPC
 
-With `cuMemCreate`, users have can indicate at allocation time that they have earmarked a particular allocation for inter-process communication or graphics interop purposes. Applications can do this by setting `CUmemAllocationProp::requestedHandleTypes` to a platform-specific field. On Windows, when `CUmemAllocationProp::requestedHandleTypes` is set to `CU_MEM_HANDLE_TYPE_WIN32` applications must also specify an LPSECURITYATTRIBUTES attribute in `CUmemAllocationProp::win32HandleMetaData`. This security attribute defines the scope of which exported allocations may be transferred to other processes.
+通过 `cuMemCreate`，用户可以在分配时指定某个分配专用于进程间通信或图形互操作目的。应用程序可以通过设置 `CUmemAllocationProp::requestedHandleTypes` 为特定于平台的字段来实现此目的。在 Windows 上，当 `CUmemAllocationProp::requestedHandleTypes` 设置为 `CU_MEM_HANDLE_TYPE_WIN32` 时，应用程序还必须在 `CUmemAllocationProp::win32HandleMetaData` 中指定一个 LPSECURITYATTRIBUTES 属性。此安全属性定义了导出的分配可以传输到其他进程的范围。
 
-Users must ensure they query for support of the requested handle type before attempting to export memory allocated with `cuMemCreate`. The following code snippet illustrates query for handle type support in a platform-specific way.
+用户必须确保在尝试导出通过 `cuMemCreate` 分配的内存之前，先查询所请求的句柄类型是否受支持。以下代码片段展示了以平台特定的方式查询句柄类型支持情况。
 
 ```c++
 int deviceSupportsIpcHandle;
@@ -659,7 +659,7 @@ int deviceSupportsIpcHandle;
 #endif
 ```
 
-Users should set the `CUmemAllocationProp::requestedHandleTypes` appropriately as shown below:
+用户应如下所示正确设置 `CUmemAllocationProp::requestedHandleTypes`：
 
 ```c++
 #if defined(__linux__)

@@ -667,7 +667,7 @@ int main()
 }
 ```
 
-Building and running this, the check after the kernel launch detects and reports the error using the macros illustrated in [Section 2.1.7](#intro-cpp-error-checking).
+构建并运行此程序后，内核启动后的检查会使用[第 2.1.7 节](#intro-cpp-error-checking)中介绍的宏来检测并报告错误。
 
 ```bash
 $ nvcc errorLogIllustration.cu -o errlog
@@ -675,7 +675,7 @@ $ ./errlog
 CUDA Runtime Error: /home/cuda/intro-cpp/errorLogIllustration.cu:24:1 = invalid argument
 ```
 
-However, when the application is run with `CUDA_LOG_FILE` set to a text file, that file contains a bit more information about the error.
+然而，当应用程序在设置了 `CUDA_LOG_FILE` 环境变量指向一个文本文件的情况下运行时，该文件会包含更多关于该错误的详细信息。
 
 ```bash
 $ env CUDA_LOG_FILE=cudaLog.txt ./errlog
@@ -685,15 +685,15 @@ $ cat cudaLog.txt
 [12:46:23.854][137216133754880][CUDA][E] Returning 1 (CUDA_ERROR_INVALID_VALUE) from cuLaunchKernel
 ```
 
-Setting `CUDA_LOG_FILE`  to `stdout` or `stderr` will print to standard out and standard error, respectively. Using the `CUDA_LOG_FILE` environment variable, it is possible to capture and identify CUDA errors, even if the application does not implement proper error checking on CUDA return values. This approach can be extremely powerful for debugging, but the environment variable alone does not allow an application to handle and recover from CUDA errors at runtime. The [error log management](../04-special-topics/error-log-management.html#error-log-management) feature of CUDA also allows a callback function to be registered with the driver which will be called whenever an error is detected. This can be used to capture and handle errors at runtime, and also to integrate CUDA error logging seamlessly into an applicationâs existing logging system.
+将 `CUDA_LOG_FILE` 设置为 `stdout` 或 `stderr` 将分别打印到标准输出和标准错误。使用 `CUDA_LOG_FILE` 环境变量，可以捕获和识别 CUDA 错误，即使应用程序未对 CUDA 返回值实施适当的错误检查。这种方法对于调试极其有效，但仅凭环境变量无法让应用程序在运行时处理和恢复 CUDA 错误。CUDA 的[错误日志管理](../04-special-topics/error-log-management.html#error-log-management)功能还允许向驱动程序注册一个回调函数，该函数将在检测到错误时被调用。这可用于在运行时捕获和处理错误，并将 CUDA 错误日志无缝集成到应用程序现有的日志系统中。
 
-[Section 4.8](../04-special-topics/error-log-management.html#error-log-management) shows more examples of the error log management feature of CUDA. Error log management and `CUDA_LOG_FILE` are available with NVIDIA Driver version r570 and later.
+[第 4.8 节](../04-special-topics/error-log-management.html#error-log-management)展示了更多关于 CUDA 错误日志管理功能的示例。错误日志管理和 `CUDA_LOG_FILE` 在 NVIDIA 驱动程序版本 r570 及更高版本中可用。
 
 ## 2.1.8.Device and Host Functions
 
-The `__global__` specifier is used to indicate the entry point for a kernel. That is, a function which will be invoked for parallel execution on the GPU. Most often, kernels are launched from the host, however it is possible to launch a kernel from within another kernel using [dynamic parallelism](../04-special-topics/dynamic-parallelism.html#cuda-dynamic-parallelism).
+`__global__` 限定符用于指示内核的入口点。也就是说，该函数将在 GPU 上被调用以进行并行执行。大多数情况下，内核是从主机端启动的，但也可以使用[动态并行](../04-special-topics/dynamic-parallelism.html#cuda-dynamic-parallelism)从另一个内核内部启动内核。
 
-The specifier `__device__` indicates that a function should be compiled for the GPU and be callable from other `__device__` or `__global__` functions.  A function, including class member functions, functors, and lambdas, can be specified as both  `__device__` and `__host__` as in the example below.
+限定符 `__device__` 表示该函数应编译为 GPU 代码，并可从其他 `__device__` 或 `__global__` 函数中调用。函数（包括类成员函数、函数对象和 lambda 表达式）可以同时指定为 `__device__` 和 `__host__`，如下例所示。
 
 ## 2.1.9.Variable Specifiers
 
